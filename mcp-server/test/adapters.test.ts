@@ -16,8 +16,16 @@ test("adapters build read-only commands", () => {
 
   assert.equal(claude.command, "claude");
   assert.deepEqual(claude.args.slice(0, 1), ["-p"]);
+  assert.equal(claude.args.includes("Review this."), false);
+  assert.equal(claude.input, "Review this.");
+
   assert.equal(copilot.command, "copilot");
   assert.ok(copilot.args.includes("--prompt") || copilot.args.includes("-p"));
+  assert.equal(copilot.args.includes("Review this."), false);
+  assert.equal(copilot.input, "Review this.");
+
   assert.equal(antigravity.command, "agy");
   assert.ok(antigravity.args.includes("--prompt") || antigravity.args.includes("-p"));
+  assert.equal(antigravity.args.includes("Review this."), false);
+  assert.equal(antigravity.input, "Review this.");
 });

@@ -25,7 +25,12 @@ test("orchestration skill narrows external CLI auto-use criteria", () => {
   );
   assert.ok(
     body.includes(
-      "Do not run external CLIs just because a task is merely complex, creative, ambiguous, or spans multiple files.",
+      "Complex, creative, ambiguous, or multi-file tasks are useful signals that multi-agent help may be valuable.",
+    ),
+  );
+  assert.ok(
+    body.includes(
+      "Those signals alone do not permit automatic external CLI execution.",
     ),
   );
   assert.ok(

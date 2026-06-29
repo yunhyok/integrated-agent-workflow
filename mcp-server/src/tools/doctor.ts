@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { adapters } from "../adapters/index.js";
 import { pluginIdentity } from "../common/result-schema.js";
 import { runProcess } from "../common/process-runner.js";
+import { getWorkspaceState, type WorkspaceState } from "../common/workspace-safety.js";
 
 export interface DoctorOptions {
   cwd: string;
@@ -16,6 +17,9 @@ export interface DoctorAgentStatus {
   binaryName: string;
   status: "available" | "unavailable";
   version?: string;
+  binaryPath?: string;
+  authStatus: "unknown" | "available" | "unavailable";
+  dryRunSupported: "unknown" | "not_checked";
   authHint: string;
 }
 
@@ -24,6 +28,11 @@ export interface DoctorReport {
   checkedAt: string;
   cwd: string;
   cachePath: string;
+  doctorCache: {
+    path: string;
+    ttlHours: 24;
+  };
+  workspace: WorkspaceState;
   agents: DoctorAgentStatus[];
 }
 
@@ -33,6 +42,7 @@ export async function createDoctorReport(options: DoctorOptions): Promise<Doctor
   for (const adapter of Object.values(adapters)) {
     let version: string | undefined;
     let status: "available" | "unavailable" = "unavailable";
+    let authStatus: "unknown" | "available" | "unavailable" = options.runVersionCheck ? "unknown" : "unavailable";
 
     if (options.runVersionCheck) {
       const result = await runProcess(adapter.binaryName, adapter.versionArgs, {
@@ -40,6 +50,7 @@ export async function createDoctorReport(options: DoctorOptions): Promise<Doctor
         timeoutMs: 5_000
       });
       status = result.status === "ok" ? "available" : "unavailable";
+      authStatus = status === "available" ? "unknown" : "unavailable";
       version = result.stdout.trim() || undefined;
     }
 
@@ -49,15 +60,24 @@ export async function createDoctorReport(options: DoctorOptions): Promise<Doctor
       binaryName: adapter.binaryName,
       status,
       version,
+      authStatus,
+      dryRunSupported: "not_checked",
       authHint: adapter.authHint
     });
   }
+
+  const cachePath = join(options.cwd, ".codex", "multi-agent", "cache", "doctor.json");
 
   return {
     plugin: pluginIdentity,
     checkedAt: (options.now ?? new Date()).toISOString(),
     cwd: options.cwd,
-    cachePath: join(options.cwd, ".codex", "multi-agent", "cache", "doctor.json"),
+    cachePath,
+    doctorCache: {
+      path: cachePath,
+      ttlHours: 24
+    },
+    workspace: getWorkspaceState(options.cwd),
     agents
   };
 }

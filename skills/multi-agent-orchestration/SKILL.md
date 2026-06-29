@@ -14,7 +14,8 @@ Use this workflow when one or more are true:
 - The user asks for independent validation, multiple agents, Claude, Copilot, Antigravity, or diverse proposals.
 - The task is high-risk because it touches release, security, data loss, authentication, payments, or broad refactors, and independent validation is clearly worth the cost.
 
-Do not run external CLIs just because a task is merely complex, creative, ambiguous, or spans multiple files.
+Complex, creative, ambiguous, or multi-file tasks are useful signals that multi-agent help may be valuable.
+Those signals alone do not permit automatic external CLI execution.
 Run external CLIs automatically only when the user explicitly asks for them or when the task is high-risk and independent validation is clearly worth the cost.
 
 Skip external CLI execution when all are true:

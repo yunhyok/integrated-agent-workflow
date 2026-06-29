@@ -10,7 +10,17 @@ test("doctor reports all agents without secrets", async () => {
   });
 
   assert.equal(report.plugin.version, "0.1.0");
+  assert.equal(typeof report.workspace.gitRepository, "boolean");
+  assert.equal(typeof report.workspace.dirty, "boolean");
+  assert.equal(typeof report.workspace.linkedWorktree, "boolean");
+  assert.equal(typeof report.workspace.isolatedWriteAvailable, "boolean");
+  assert.match(report.doctorCache.path, /doctor\.json$/);
+  assert.equal(report.doctorCache.ttlHours, 24);
   assert.deepEqual(report.agents.map((agent) => agent.id).sort(), ["antigravity", "claude", "copilot"]);
+  for (const agent of report.agents) {
+    assert.ok(["unknown", "available", "unavailable"].includes(agent.authStatus));
+    assert.ok(["unknown", "not_checked"].includes(agent.dryRunSupported));
+  }
   assert.equal(JSON.stringify(report).includes("token"), false);
   assert.equal(JSON.stringify(report).includes("secret"), false);
 });

@@ -2,6 +2,8 @@
 
 Use this plugin when a Codex task explicitly calls for external agents, or when the task is high-risk and independent validation is clearly worth the cost.
 
+Complex, creative, ambiguous, or multi-file tasks are useful signals that multi-agent help may be valuable, but those signals alone do not permit automatic external CLI execution.
+
 Example implementation request:
 
 ```text

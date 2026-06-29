@@ -9,7 +9,8 @@ export const copilotAdapter: CliAdapter = {
   buildCommand(prompt) {
     return {
       command: "copilot",
-      args: ["--prompt", prompt]
+      args: ["--prompt"],
+      input: prompt
     };
   }
 };

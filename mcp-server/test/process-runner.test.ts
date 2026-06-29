@@ -21,3 +21,13 @@ test("marks timeout", async () => {
 
   assert.equal(result.status, "timeout");
 });
+
+test("missing binary returns unavailable", async () => {
+  const result = await runProcess("definitely-not-a-real-integrated-agent-binary", ["--version"], {
+    cwd: process.cwd(),
+    timeoutMs: 5_000
+  });
+
+  assert.equal(result.status, "unavailable");
+  assert.equal(result.exitCode, null);
+});

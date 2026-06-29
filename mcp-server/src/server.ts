@@ -4,9 +4,11 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { adapters } from "./adapters/index.js";
 import { runProcess } from "./common/process-runner.js";
+import { writeRunArtifact } from "./common/run-artifacts.js";
+import { evaluateWorkspaceSafety } from "./common/workspace-safety.js";
 import type { AgentResult } from "./common/result-schema.js";
 import { createDoctorReport } from "./tools/doctor.js";
-import { buildAgentPrompt, normalizeExecutionResult } from "./tools/run-agent.js";
+import { buildAgentPrompt, makeUnsafeWorkspaceResult, normalizeExecutionResult } from "./tools/run-agent.js";
 import { summarizePanelStatus } from "./tools/run-panel.js";
 import { summarizeResults } from "./tools/summarize-results.js";
 
@@ -45,6 +47,16 @@ export function createServer(): McpServer {
     },
     async (input) => {
       const adapter = adapters[input.agentId];
+      const safety = evaluateWorkspaceSafety(input.cwd, input.writePolicy);
+      if (!safety.allowed) {
+        const result = makeUnsafeWorkspaceResult({
+          agentId: adapter.id,
+          displayName: adapter.displayName,
+          reason: safety.reason
+        });
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
       const prompt = buildAgentPrompt(input);
       const command = adapter.buildCommand(prompt, { timeoutMs: input.timeoutMs });
       const processResult = await runProcess(command.command, command.args, {
@@ -52,10 +64,16 @@ export function createServer(): McpServer {
         timeoutMs: input.timeoutMs,
         input: command.input
       });
+      const logPath = writeRunArtifact(input.cwd, adapter.id, {
+        command: command.command,
+        args: command.args,
+        processResult
+      });
       const result = normalizeExecutionResult({
         agentId: adapter.id,
         displayName: adapter.displayName,
-        processResult
+        processResult,
+        logPath
       });
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     }
@@ -74,8 +92,20 @@ export function createServer(): McpServer {
     },
     async (input) => {
       const results: AgentResult[] = [];
+      const safety = evaluateWorkspaceSafety(input.cwd, input.writePolicy);
       for (const agentId of input.agentIds) {
         const adapter = adapters[agentId];
+        if (!safety.allowed) {
+          results.push(
+            makeUnsafeWorkspaceResult({
+              agentId: adapter.id,
+              displayName: adapter.displayName,
+              reason: safety.reason
+            })
+          );
+          continue;
+        }
+
         const prompt = buildAgentPrompt(input);
         const command = adapter.buildCommand(prompt, { timeoutMs: input.timeoutMs });
         const processResult = await runProcess(command.command, command.args, {
@@ -83,7 +113,12 @@ export function createServer(): McpServer {
           timeoutMs: input.timeoutMs,
           input: command.input
         });
-        results.push(normalizeExecutionResult({ agentId: adapter.id, displayName: adapter.displayName, processResult }));
+        const logPath = writeRunArtifact(input.cwd, adapter.id, {
+          command: command.command,
+          args: command.args,
+          processResult
+        });
+        results.push(normalizeExecutionResult({ agentId: adapter.id, displayName: adapter.displayName, processResult, logPath }));
       }
       return {
         content: [

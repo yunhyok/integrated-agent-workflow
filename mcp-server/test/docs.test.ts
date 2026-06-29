@@ -28,6 +28,10 @@ test("usage docs keep automatic orchestration selection narrow", () => {
   const body = readFileSync(resolve(repoRoot, "docs/usage.md"), "utf8");
   assert.match(
     body,
+    /Complex, creative, ambiguous, or multi-file tasks are useful signals that multi-agent help may be valuable/,
+  );
+  assert.match(
+    body,
     /Codex may select the orchestration skill automatically only when the user explicitly asks for external agents or when the task is high-risk and independent validation is clearly worth the cost\./,
   );
 });

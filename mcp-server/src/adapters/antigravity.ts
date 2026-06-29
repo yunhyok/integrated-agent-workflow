@@ -9,7 +9,8 @@ export const antigravityAdapter: CliAdapter = {
   buildCommand(prompt) {
     return {
       command: "agy",
-      args: ["--prompt", prompt]
+      args: ["--prompt"],
+      input: prompt
     };
   }
 };

@@ -8,7 +8,7 @@ export interface ProcessRunOptions {
 }
 
 export interface ProcessRunResult {
-  status: "ok" | "timeout" | "execution_failed";
+  status: "ok" | "timeout" | "execution_failed" | "unavailable";
   exitCode: number | null;
   stdout: string;
   stderr: string;
@@ -51,12 +51,12 @@ export function runProcess(command: string, args: string[], options: ProcessRunO
       stderr += chunk.toString("utf8");
     });
 
-    child.on("error", (error) => {
+    child.on("error", (error: NodeJS.ErrnoException) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
       resolve({
-        status: "execution_failed",
+        status: error.code === "ENOENT" ? "unavailable" : "execution_failed",
         exitCode: null,
         stdout: redactSecrets(stdout),
         stderr: redactSecrets(`${stderr}\n${error.message}`),

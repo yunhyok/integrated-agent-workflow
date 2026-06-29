@@ -9,7 +9,8 @@ export const claudeAdapter: CliAdapter = {
   buildCommand(prompt) {
     return {
       command: "claude",
-      args: ["-p", prompt]
+      args: ["-p"],
+      input: prompt
     };
   }
 };
