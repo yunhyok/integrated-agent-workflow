@@ -1,0 +1,14 @@
+{
+  "name": "integrated-agent-workflow",
+  "version": "0.1.0",
+  "description": "Coordinate Claude, Copilot, and Antigravity CLI agents from Codex.",
+  "skills": "./skills",
+  "mcpServers": {
+    "integrated_agent_runner": {
+      "command": "node",
+      "args": ["./mcp-server/dist/server.js"],
+      "startup_timeout_sec": 10,
+      "tool_timeout_sec": 300
+    }
+  }
+}
