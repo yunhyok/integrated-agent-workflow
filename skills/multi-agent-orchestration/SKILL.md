@@ -1,6 +1,6 @@
 ---
 name: multi-agent-orchestration
-description: Use when a task is complex, high-risk, creative, ambiguous, spans multiple files, benefits from independent review, or mentions Claude, Copilot, Antigravity, external CLI agents, validation diversity, or multi-agent execution.
+description: Use when the user explicitly asks for Claude, Copilot, Antigravity, external CLI agents, validation diversity, multi-agent execution, or independent review, or when high-risk work clearly warrants independent validation.
 ---
 
 # Multi-Agent Orchestration
@@ -11,10 +11,11 @@ Codex is the coordinator and Codex remains the final verifier. External agent ou
 
 Use this workflow when one or more are true:
 
-- The task spans multiple files, modules, workflows, or design decisions.
-- The task is high-risk because it touches release, security, data loss, authentication, payments, or broad refactors.
 - The user asks for independent validation, multiple agents, Claude, Copilot, Antigravity, or diverse proposals.
-- The task is creative or ambiguous enough that multiple independent answers can improve the result.
+- The task is high-risk because it touches release, security, data loss, authentication, payments, or broad refactors, and independent validation is clearly worth the cost.
+
+Do not run external CLIs just because a task is merely complex, creative, ambiguous, or spans multiple files.
+Run external CLIs automatically only when the user explicitly asks for them or when the task is high-risk and independent validation is clearly worth the cost.
 
 Skip external CLI execution when all are true:
 
@@ -22,7 +23,7 @@ Skip external CLI execution when all are true:
 - Independent review would add little evidence.
 - No external CLI is available and the task can be completed directly.
 
-Before a long-running, write-capable, or broad execution, summarize the proposed agent panel and ask for confirmation.
+Ask for confirmation before any long-running, write-capable, or broad external execution.
 
 ## Workflow
 
