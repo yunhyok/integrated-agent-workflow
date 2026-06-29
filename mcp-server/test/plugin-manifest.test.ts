@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
 
@@ -20,6 +20,8 @@ test("plugin manifest exposes Integrated Agent Workflow v0.1.0", () => {
   assert.equal(manifest.skills, "./skills");
   assert.equal(manifest.mcpServers.integrated_agent_runner.command, "node");
   assert.deepEqual(manifest.mcpServers.integrated_agent_runner.args, ["./mcp-server/dist/server.js"]);
+  assert.equal(existsSync(resolve(repoRoot, "mcp-server/src/server.ts")), true);
+  assert.equal(existsSync(resolve(repoRoot, "mcp-server/package-lock.json")), true);
 });
 
 test("README presents plugin name and version", () => {
