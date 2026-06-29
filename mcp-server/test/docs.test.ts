@@ -17,3 +17,17 @@ test("authentication docs explain one-time login model", () => {
   assert.match(body, /not authenticate on every run/);
   assert.match(body, /does not store tokens/);
 });
+
+test("security docs treat run outputs as sensitive", () => {
+  const body = readFileSync(resolve(repoRoot, "docs/security.md"), "utf8");
+  assert.match(body, /logs, result files, and run artifacts/);
+  assert.match(body, /treated as potentially sensitive/);
+});
+
+test("usage docs keep automatic orchestration selection narrow", () => {
+  const body = readFileSync(resolve(repoRoot, "docs/usage.md"), "utf8");
+  assert.match(
+    body,
+    /Codex may select the orchestration skill automatically only when the user explicitly asks for external agents or when the task is high-risk and independent validation is clearly worth the cost\./,
+  );
+});

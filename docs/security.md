@@ -6,4 +6,6 @@ The plugin must not include credential files, private keys, `.env` contents, acc
 
 Local run artifacts are written under `.codex/multi-agent/runs/` and cache artifacts under `.codex/multi-agent/cache/`. These paths are gitignored because prompts and results may contain private project context.
 
+Generated logs, result files, and run artifacts must be redacted where possible, treated as potentially sensitive, and not shared casually.
+
 Write-capable external execution requires a git worktree or temporary copy. Direct writes to the active workspace are not the default behavior.

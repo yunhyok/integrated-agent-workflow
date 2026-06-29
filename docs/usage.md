@@ -14,4 +14,4 @@ Example review request:
 Use multi-agent review on this branch. Prioritize correctness, regressions, missing tests, and security risks.
 ```
 
-Codex may also select the orchestration skill automatically when the task description indicates that independent external validation would help.
+Codex may select the orchestration skill automatically only when the user explicitly asks for external agents or when the task is high-risk and independent validation is clearly worth the cost.
