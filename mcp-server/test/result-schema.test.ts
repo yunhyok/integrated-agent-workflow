@@ -1,0 +1,39 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { AGENT_STATUSES, makeAgentResult, pluginIdentity } from "../src/common/result-schema.js";
+
+test("plugin identity is stable", () => {
+  assert.deepEqual(pluginIdentity, {
+    name: "Integrated Agent Workflow",
+    packageName: "integrated-agent-workflow",
+    version: "0.1.0"
+  });
+});
+
+test("agent statuses include expected failure modes", () => {
+  assert.deepEqual(AGENT_STATUSES, [
+    "ok",
+    "unavailable",
+    "unauthenticated",
+    "timeout",
+    "execution_failed",
+    "invalid_output",
+    "unsafe_request"
+  ]);
+});
+
+test("makeAgentResult fills common metadata", () => {
+  const result = makeAgentResult({
+    agentId: "claude",
+    displayName: "Claude Code",
+    status: "ok",
+    durationMs: 25,
+    resultText: "Reviewed the code."
+  });
+
+  assert.equal(result.plugin.version, "0.1.0");
+  assert.equal(result.agentId, "claude");
+  assert.equal(result.status, "ok");
+  assert.equal(result.resultText, "Reviewed the code.");
+  assert.equal(typeof result.createdAt, "string");
+});
