@@ -2,6 +2,21 @@
   "name": "integrated-agent-workflow",
   "version": "0.1.0",
   "description": "Coordinate Claude, Copilot, and Antigravity CLI agents from Codex.",
+  "author": {
+    "name": "Integrated Agent Workflow Maintainers"
+  },
+  "interface": {
+    "displayName": "Integrated Agent Workflow",
+    "shortDescription": "Coordinate external coding agents from Codex.",
+    "longDescription": "Coordinate Claude Code, GitHub Copilot CLI, and Google Antigravity CLI through a local MCP server while Codex remains the orchestrator and verifier.",
+    "developerName": "Integrated Agent Workflow Maintainers",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Write"],
+    "defaultPrompt": [
+      "Run a multi-agent review of this change.",
+      "Coordinate external agents for this implementation."
+    ]
+  },
   "skills": "./skills",
   "mcpServers": {
     "integrated_agent_runner": {

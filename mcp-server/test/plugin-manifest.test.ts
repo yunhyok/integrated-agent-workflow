@@ -12,6 +12,11 @@ test("plugin manifest exposes Integrated Agent Workflow v0.1.0", () => {
   assert.equal(manifest.name, "integrated-agent-workflow");
   assert.equal(manifest.version, "0.1.0");
   assert.equal(manifest.description, "Coordinate Claude, Copilot, and Antigravity CLI agents from Codex.");
+  assert.equal(typeof manifest.author, "object");
+  assert.notEqual(manifest.author, null);
+  assert.equal(typeof manifest.interface, "object");
+  assert.notEqual(manifest.interface, null);
+  assert.match(manifest.interface.displayName, /Integrated Agent Workflow/);
   assert.equal(manifest.skills, "./skills");
   assert.equal(manifest.mcpServers.integrated_agent_runner.command, "node");
   assert.deepEqual(manifest.mcpServers.integrated_agent_runner.args, ["./mcp-server/dist/server.js"]);
