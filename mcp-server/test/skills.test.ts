@@ -11,7 +11,7 @@ function readSkill(name: string): string {
 
 test("orchestration skill narrows external CLI auto-use criteria", () => {
   const body = readSkill("multi-agent-orchestration");
-  const frontmatter = body.match(/^---\n(?<frontmatter>[\s\S]*?)\n---/);
+  const frontmatter = body.match(/^---\r?\n(?<frontmatter>[\s\S]*?)\r?\n---(?:\r?\n|$)/);
   assert.ok(frontmatter?.groups);
   const description = frontmatter.groups.frontmatter.match(/^description: (?<description>.*)$/m);
   assert.ok(description?.groups);
