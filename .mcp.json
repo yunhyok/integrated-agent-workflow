@@ -1,11 +1,31 @@
 {
   "mcpServers": {
-    "integrated_agent_runner": {
-      "command": "node",
-      "args": ["./mcp-server/dist/server.js"],
+    "multi_agent": {
+      "command": "powershell.exe",
+      "args": [
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "./run-mcp.ps1"
+      ],
       "cwd": ".",
-      "startup_timeout_sec": 10,
-      "tool_timeout_sec": 660
+      "startup_timeout_sec": 20,
+      "tool_timeout_sec": 900,
+      "env_vars": [
+        "LM_API_TOKEN",
+        "MULTI_AGENT_LM_STUDIO_API_KEY",
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+        "ANTHROPIC_AUTH_TOKEN",
+        "COPILOT_GITHUB_TOKEN",
+        "GH_TOKEN",
+        "GITHUB_TOKEN",
+        "GEMINI_API_KEY",
+        "GOOGLE_API_KEY"
+      ]
     }
   }
 }
