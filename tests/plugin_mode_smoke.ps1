@@ -30,6 +30,53 @@ function Invoke-Launcher {
     [PSCustomObject]@{ ExitCode = $exitCode; Output = ($output | Out-String) }
 }
 
+function Invoke-InjectedPluginPostWriteFailure {
+    param(
+        [Parameter(Mandatory = $true)][string]$InstallerPath,
+        [Parameter(Mandatory = $true)][hashtable]$InstallerArguments,
+        [Parameter(Mandatory = $true)][string]$PluginConfigPath,
+        [Parameter(Mandatory = $true)][string]$WrittenMarker
+    )
+
+    $global:multiAgentRollbackInjectionConfigPath = $PluginConfigPath
+    $global:multiAgentRollbackInjectionWrittenMarker = $WrittenMarker
+    $global:multiAgentRollbackInjectionTriggered = $false
+    function Get-Acl {
+        param([Parameter(Mandatory = $true)][string]$LiteralPath)
+
+        if (-not $global:multiAgentRollbackInjectionTriggered -and
+            (Test-Path -LiteralPath $global:multiAgentRollbackInjectionConfigPath -PathType Leaf) -and
+            [IO.File]::ReadAllText($global:multiAgentRollbackInjectionConfigPath).Contains($global:multiAgentRollbackInjectionWrittenMarker)) {
+            $global:multiAgentRollbackInjectionTriggered = $true
+            throw 'Injected post-write plugin installation failure.'
+        }
+        Microsoft.PowerShell.Security\Get-Acl -LiteralPath $LiteralPath
+    }
+
+    $failed = $false
+    $failureRecord = $null
+    $injectionTriggered = $false
+    try {
+        & $InstallerPath @InstallerArguments
+    }
+    catch {
+        $failed = $true
+        $failureRecord = $_
+    }
+    finally {
+        $injectionTriggered = [bool]$global:multiAgentRollbackInjectionTriggered
+        Remove-Variable -Name multiAgentRollbackInjectionConfigPath -Scope Global -ErrorAction SilentlyContinue
+        Remove-Variable -Name multiAgentRollbackInjectionWrittenMarker -Scope Global -ErrorAction SilentlyContinue
+        Remove-Variable -Name multiAgentRollbackInjectionTriggered -Scope Global -ErrorAction SilentlyContinue
+    }
+    if (-not $failed) {
+        throw 'The injected post-write plugin installation did not fail.'
+    }
+    if (-not $injectionTriggered) {
+        throw "The plugin rollback failure injection was not reached after the config write: $($failureRecord.Exception.Message)"
+    }
+}
+
 $repoRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $installer = Join-Path $repoRoot 'install.ps1'
 $launcher = Join-Path $repoRoot 'run-mcp.ps1'
@@ -57,6 +104,7 @@ $managedNames = @(
     'MULTI_AGENT_RUNTIME_DIR',
     'MULTI_AGENT_ALLOWED_ROOTS_JSON',
     'MULTI_AGENT_ENABLE_UNCONFINED_CODEX_REVIEWER',
+    'MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER',
     'MULTI_AGENT_ENABLE_UNCONFINED_ANTIGRAVITY_REVIEWER'
 )
 $previousManagedValues = @{}
@@ -77,7 +125,8 @@ try {
     $env:PATH = $shimDirectory
 
     & $installer -PluginMode -AllowUnsafeCheckoutParent -SkipDependencyInstall -SkipLmStudioProbe `
-        -LmStudioBaseUrl 'http://127.0.0.1:4321' -LmStudioModel 'test/model' -AllowedRoot $repoRoot
+        -LmStudioBaseUrl 'http://127.0.0.1:4321' -LmStudioModel 'test/model' -AllowedRoot $repoRoot `
+        -EnableUnconfinedCopilotReviewer
     if ($LASTEXITCODE -ne 0) {
         throw 'Plugin-mode installation failed.'
     }
@@ -98,6 +147,7 @@ try {
     Assert-Equal $pluginConfig.environment.MULTI_AGENT_LM_STUDIO_BASE_URL 'http://127.0.0.1:4321/v1' 'Plugin URL'
     Assert-Equal $pluginConfig.environment.MULTI_AGENT_LM_STUDIO_MODEL 'test/model' 'Plugin model'
     Assert-Equal $pluginConfig.environment.MULTI_AGENT_ALLOWED_ROOTS_JSON (ConvertTo-Json -InputObject @($repoRoot) -Compress) 'Plugin allowed roots'
+    Assert-Equal $pluginConfig.environment.MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER '1' 'Plugin unconfined Copilot opt-in'
     if ($pluginConfig.environment.PSObject.Properties['LM_API_TOKEN'] -or
         $pluginConfig.environment.PSObject.Properties['MULTI_AGENT_LM_STUDIO_API_KEY']) {
         throw 'Plugin configuration persisted an LM Studio secret.'
@@ -111,6 +161,39 @@ try {
     $preservedConfig = [IO.File]::ReadAllText($pluginConfigPath) | ConvertFrom-Json
     Assert-Equal $preservedConfig.environment.MULTI_AGENT_LM_STUDIO_BASE_URL 'http://127.0.0.1:4321/v1' 'Preserved plugin URL'
     Assert-Equal $preservedConfig.environment.MULTI_AGENT_LM_STUDIO_MODEL 'test/model' 'Preserved plugin model'
+
+    Assert-Equal $preservedConfig.environment.MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER '1' 'Preserved plugin unconfined Copilot opt-in'
+    $preservedConfigHash = (Get-FileHash -LiteralPath $pluginConfigPath -Algorithm SHA256).Hash
+    $rollbackArguments = @{
+        PluginMode = $true
+        AllowUnsafeCheckoutParent = $true
+        SkipDependencyInstall = $true
+        SkipLmStudioProbe = $true
+        LmStudioBaseUrl = 'http://127.0.0.1:4333'
+        LmStudioModel = 'rollback/model'
+        AllowedRoot = @($repoRoot)
+    }
+    Invoke-InjectedPluginPostWriteFailure -InstallerPath $installer -InstallerArguments $rollbackArguments `
+        -PluginConfigPath $pluginConfigPath -WrittenMarker 'rollback/model'
+    Assert-Equal (Get-FileHash -LiteralPath $pluginConfigPath -Algorithm SHA256).Hash $preservedConfigHash 'Existing plugin config rollback hash'
+    if (Get-ChildItem -LiteralPath (Split-Path -Parent $pluginConfigPath) -Filter 'plugin-config.json.*.tmp') {
+        throw 'Existing plugin config rollback left an atomic-write temporary file.'
+    }
+
+    Remove-Item -LiteralPath $pluginConfigPath -Force
+    Invoke-InjectedPluginPostWriteFailure -InstallerPath $installer -InstallerArguments $rollbackArguments `
+        -PluginConfigPath $pluginConfigPath -WrittenMarker 'rollback/model'
+    if (Test-Path -LiteralPath $pluginConfigPath) {
+        throw 'Fresh plugin config rollback left a newly written configuration behind.'
+    }
+    if (Get-ChildItem -LiteralPath (Split-Path -Parent $pluginConfigPath) -Filter 'plugin-config.json.*.tmp') {
+        throw 'Fresh plugin config rollback left an atomic-write temporary file.'
+    }
+
+    & $installer -PluginMode -AllowUnsafeCheckoutParent -SkipDependencyInstall -SkipLmStudioProbe `
+        -LmStudioBaseUrl 'http://127.0.0.1:4321' -LmStudioModel 'test/model' -AllowedRoot $repoRoot `
+        -EnableUnconfinedCopilotReviewer
+    $preservedConfig = [IO.File]::ReadAllText($pluginConfigPath) | ConvertFrom-Json
 
     $cachedLauncherRoot = Join-Path $testRoot 'plugin-cache'
     New-Item -ItemType Directory -Path $cachedLauncherRoot | Out-Null
@@ -132,6 +215,17 @@ try {
         throw 'Launcher did not explain the fail-closed missing-runtime result.'
     }
 
+    $missingPathsConfig = [ordered]@{
+        schemaVersion = 1
+        environment = $preservedConfig.environment
+    }
+    [IO.File]::WriteAllText($pluginConfigPath, (($missingPathsConfig | ConvertTo-Json -Depth 5) + "`n"), (New-Object Text.UTF8Encoding($false)))
+    $missingPathsResult = Invoke-Launcher -PowerShellPath $powerShellPath -LauncherPath $cachedLauncher
+    Assert-Equal $missingPathsResult.ExitCode 2 'Missing-paths launcher exit code'
+    if ($missingPathsResult.Output -notmatch 'unsupported schema') {
+        throw 'Launcher did not explain the fail-closed missing-paths result.'
+    }
+
     $launchRoot = Join-Path $testRoot 'launch-runtime'
     New-Item -ItemType Directory -Path $launchRoot | Out-Null
     New-Item -ItemType Junction -Path (Join-Path $launchRoot '.venv') -Target $repoVenv | Out-Null
@@ -144,6 +238,7 @@ names = [
     "MULTI_AGENT_LM_STUDIO_BASE_URL",
     "MULTI_AGENT_LM_STUDIO_MODEL",
     "MULTI_AGENT_ALLOWED_ROOTS_JSON",
+    "MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER",
 ]
 Path(os.environ["PLUGIN_MODE_CAPTURE_PATH"]).write_text(
     json.dumps({name: os.environ.get(name) for name in names}), encoding="utf-8"
@@ -169,6 +264,7 @@ Path(os.environ["PLUGIN_MODE_CAPTURE_PATH"]).write_text(
     Assert-Equal $captured.MULTI_AGENT_LM_STUDIO_MODEL 'env/override' 'Launcher process-environment precedence'
     Assert-Equal $captured.MULTI_AGENT_ALLOWED_ROOTS_JSON (ConvertTo-Json -InputObject @($repoRoot) -Compress) 'Launcher allowed roots'
 
+    Assert-Equal $captured.MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER '1' 'Launcher unconfined Copilot opt-in'
     $validConfigText = [IO.File]::ReadAllText($pluginConfigPath)
     [IO.File]::WriteAllText($pluginConfigPath, '{invalid-json', (New-Object Text.UTF8Encoding($false)))
     Remove-Item -LiteralPath $capturePath -Force

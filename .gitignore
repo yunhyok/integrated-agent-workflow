@@ -9,3 +9,5 @@ __pycache__/
 htmlcov/
 models-luna-v2.json
 *.backup.*
+**/.codex/multi-agent/cache/
+**/.codex/multi-agent/runs/

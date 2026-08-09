@@ -28,6 +28,7 @@ $managedNames = @(
     'MULTI_AGENT_RUNTIME_DIR',
     'MULTI_AGENT_ALLOWED_ROOTS_JSON',
     'MULTI_AGENT_ENABLE_UNCONFINED_CODEX_REVIEWER',
+    'MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER',
     'MULTI_AGENT_ENABLE_UNCONFINED_ANTIGRAVITY_REVIEWER'
 )
 
@@ -44,6 +45,8 @@ catch {
 if ($null -eq $config -or
     $null -eq $config.PSObject.Properties['schemaVersion'] -or
     [int]$config.schemaVersion -ne 1 -or
+    $null -eq $config.PSObject.Properties['pythonPath'] -or
+    $null -eq $config.PSObject.Properties['routerPath'] -or
     $null -eq $config.PSObject.Properties['environment']) {
     Stop-Launcher "the machine-local plugin configuration has an unsupported schema. Rerun '.\install.ps1 -PluginMode' from the protected source checkout."
 }

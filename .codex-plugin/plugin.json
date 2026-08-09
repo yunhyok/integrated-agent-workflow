@@ -10,7 +10,7 @@
   "repository": "https://github.com/yunhyok/integrated-agent-workflow",
   "keywords": ["codex", "multi-agent", "lm-studio", "mcp", "review"],
   "interface": {
-    "displayName": "Integrated Agent Workflow",
+    "displayName": "Integrated Agent Workflow v0.6.0",
     "shortDescription": "Coordinate bounded reviews while Codex owns validation.",
     "longDescription": "Use Codex sub-agents by default and optionally request advisory reviews from a hardened Windows Python MCP router for LM Studio, Claude Code, GitHub Copilot CLI, Codex CLI, and Antigravity CLI. External write access stays disabled and Codex remains responsible for integration and validation.",
     "developerName": "Yunhyok",

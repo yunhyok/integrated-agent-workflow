@@ -33,6 +33,7 @@ $scripts = @(
     'uninstall.ps1',
     'tests\ci.ps1',
     'tests\install_smoke.ps1',
+    'tests\luna_v2_smoke.ps1',
     'tests\plugin_mode_smoke.ps1',
     'skills\integrated-agent-flow\scripts\Enable-LunaV2.ps1'
 )
@@ -57,5 +58,7 @@ if ($allErrors.Count -gt 0) {
 Assert-LastExitCode 'Standalone installer smoke'
 & .\tests\plugin_mode_smoke.ps1
 Assert-LastExitCode 'Plugin-mode smoke'
+& .\tests\luna_v2_smoke.ps1
+Assert-LastExitCode 'Luna v2 compatibility smoke'
 
 Write-Host 'CI_VALIDATION=PASS'

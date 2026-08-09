@@ -22,11 +22,55 @@ function Get-PropertyValue {
     return $null
 }
 
+function Resolve-CodexCommand {
+    foreach ($candidate in @('codex.cmd', 'codex.exe', 'codex')) {
+        $command = Get-Command $candidate -ErrorAction SilentlyContinue
+        if ($command) {
+            return $command.Source
+        }
+    }
+    throw 'Codex CLI was not found.'
+}
+
+function Set-OwnerRightsAcl {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $item = Get-Item -LiteralPath $Path -Force
+    $currentSid = [Security.Principal.WindowsIdentity]::GetCurrent().User
+    $acl = if ($item -is [IO.DirectoryInfo]) {
+        New-Object Security.AccessControl.DirectorySecurity
+    }
+    else {
+        New-Object Security.AccessControl.FileSecurity
+    }
+    $acl.SetAccessRuleProtection($true, $false)
+    $acl.SetOwner($currentSid)
+    $inheritanceFlags = if ($item -is [IO.DirectoryInfo]) {
+        [Security.AccessControl.InheritanceFlags]'ContainerInherit, ObjectInherit'
+    }
+    else {
+        [Security.AccessControl.InheritanceFlags]::None
+    }
+    foreach ($sidValue in @('S-1-3-4', 'S-1-5-18', 'S-1-5-32-544')) {
+        $rule = New-Object Security.AccessControl.FileSystemAccessRule(
+            (New-Object Security.Principal.SecurityIdentifier($sidValue)),
+            [Security.AccessControl.FileSystemRights]::FullControl,
+            $inheritanceFlags,
+            [Security.AccessControl.PropagationFlags]::None,
+            [Security.AccessControl.AccessControlType]::Allow
+        )
+        [void]$acl.AddAccessRule($rule)
+    }
+    Microsoft.PowerShell.Security\Set-Acl -LiteralPath $item.FullName -AclObject $acl
+}
+
 function Assert-RestrictedAcl {
     param([Parameter(Mandatory = $true)][string[]]$Paths)
 
     $currentSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-    $allowedSids = @($currentSid, 'S-1-5-18', 'S-1-5-32-544')
+    $ownerEquivalentSids = @($currentSid, 'S-1-3-4')
+    $fixedTrustedSids = @('S-1-5-18', 'S-1-5-32-544')
+    $allowedSids = @($ownerEquivalentSids + $fixedTrustedSids)
     foreach ($path in $Paths) {
         if (-not (Test-Path -LiteralPath $path)) {
             throw "ACL fixture is missing: $path"
@@ -59,9 +103,12 @@ function Assert-RestrictedAcl {
                 throw "ACL contains an unexpected rule: $path"
             }
         }
-        foreach ($allowedSid in $allowedSids) {
-            if (@($rules | Where-Object { $_.IdentityReference.Value -eq $allowedSid }).Count -ne 1) {
-                throw "ACL does not contain exactly one expected SID '$allowedSid': $path"
+        if (@($rules | Where-Object { $_.IdentityReference.Value -in $ownerEquivalentSids }).Count -ne 1) {
+            throw "ACL does not contain exactly one owner-equivalent rule: $path"
+        }
+        foreach ($fixedTrustedSid in $fixedTrustedSids) {
+            if (@($rules | Where-Object { $_.IdentityReference.Value -eq $fixedTrustedSid }).Count -ne 1) {
+                throw "ACL does not contain exactly one expected SID '$fixedTrustedSid': $path"
             }
         }
     }
@@ -70,7 +117,7 @@ function Assert-RestrictedAcl {
 $repoRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $installer = Join-Path $repoRoot 'install.ps1'
 $uninstaller = Join-Path $repoRoot 'uninstall.ps1'
-$realCodex = (Get-Command codex.cmd -ErrorAction Stop).Source
+$realCodex = Resolve-CodexCommand
 $testRoot = Join-Path ([IO.Path]::GetTempPath()) ("multi-agent-install-smoke-" + [Guid]::NewGuid().ToString('N'))
 $sameHome = Join-Path $testRoot 'same-home'
 $foreignHome = Join-Path $testRoot 'foreign-home'
@@ -88,6 +135,8 @@ $junctionPath = Join-Path $testRoot 'junction-parent'
 $unsafeCheckoutParent = Join-Path $testRoot 'unsafe-parent'
 $unsafeCheckout = Join-Path $unsafeCheckoutParent 'checkout'
 $broadRuntimeDirectory = Join-Path $testRoot 'documents'
+$ownerRightsFixtureDirectory = Join-Path $repoRoot ('.tmp\owner-rights-install-smoke-' + [Guid]::NewGuid().ToString('N'))
+$ownerRightsFixtureFile = Join-Path $ownerRightsFixtureDirectory 'fixture.txt'
 
 try {
     New-Item -ItemType Directory -Path $sameHome, $foreignHome, $rollbackHome, $shimDirectory, $unsafeCheckout | Out-Null
@@ -108,9 +157,45 @@ try {
     New-Item -ItemType Directory -Path $broadRuntimeDirectory | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $runtimeDirectory 'stale') -Force | Out-Null
     New-Item -ItemType File -Path (Join-Path $runtimeDirectory 'stale\prompt.txt') | Out-Null
-    $env:LOCALAPPDATA = $smokeLocalAppData
+    New-Item -ItemType Directory -Path $ownerRightsFixtureDirectory -Force | Out-Null
+    New-Item -ItemType File -Path $ownerRightsFixtureFile | Out-Null
+    Set-OwnerRightsAcl $ownerRightsFixtureDirectory
+    Set-OwnerRightsAcl $ownerRightsFixtureFile
+    $global:multiAgentOwnerRightsSetAclTargets = @(
+        [IO.Path]::GetFullPath($ownerRightsFixtureDirectory),
+        [IO.Path]::GetFullPath($ownerRightsFixtureFile)
+    )
+    function Set-Acl {
+        param(
+            [Parameter(Mandatory = $true)][string]$LiteralPath,
+            [Parameter(Mandatory = $true)]$AclObject
+        )
 
+        $fullPath = [IO.Path]::GetFullPath($LiteralPath)
+        if ($fullPath -in $global:multiAgentOwnerRightsSetAclTargets) {
+            throw "Installer attempted to rewrite an accepted OWNER RIGHTS ACL: $fullPath"
+        }
+        Microsoft.PowerShell.Security\Set-Acl -LiteralPath $LiteralPath -AclObject $AclObject
+    }
+    $env:LOCALAPPDATA = $smokeLocalAppData
     $env:CODEX_HOME = $sameHome
+
+    $oversizedRouterTimeoutWasRejected = $false
+    try {
+        & $installer @installerSafetyArgs -WhatIf -RouterTimeoutSec 3601 `
+            -McpToolTimeoutSec 3602 -LmStudioBaseUrl 'http://127.0.0.1:9' `
+            -LmStudioModel 'offline/not-probed'
+    }
+    catch {
+        $oversizedRouterTimeoutWasRejected = $true
+    }
+    if (-not $oversizedRouterTimeoutWasRejected) {
+        throw 'Installer accepted a router timeout above the runtime maximum.'
+    }
+    & $installer @installerSafetyArgs -WhatIf -RouterTimeoutSec 3600 `
+        -McpToolTimeoutSec 3601 -LmStudioBaseUrl 'http://127.0.0.1:9' `
+        -LmStudioModel 'offline/not-probed'
+
     $unsafeInstaller = Join-Path $unsafeCheckout 'install.ps1'
     $unsafeCheckoutWasRejected = $false
     try {
@@ -124,7 +209,7 @@ try {
     }
     & $unsafeInstaller -AllowUnsafeCheckoutParent -WhatIf -LmStudioBaseUrl 'http://127.0.0.1:9' -LmStudioModel 'offline/not-probed'
 
-    & $installer @installerSafetyArgs -SkipDependencyInstall -SkipLmStudioProbe -LmStudioBaseUrl 'http://127.0.0.1:4321' -LmStudioModel 'test/model' -RuntimeDirectory $runtimeDirectory -AllowedRoot $repoRoot -EnableUnconfinedCodexReviewer -EnableUnconfinedAntigravityReviewer
+    & $installer @installerSafetyArgs -SkipDependencyInstall -SkipLmStudioProbe -LmStudioBaseUrl 'http://127.0.0.1:4321' -LmStudioModel 'test/model' -RuntimeDirectory $runtimeDirectory -AllowedRoot $repoRoot -EnableUnconfinedCodexReviewer -EnableUnconfinedCopilotReviewer -EnableUnconfinedAntigravityReviewer
     if ($LASTEXITCODE -ne 0) {
         throw 'Initial isolated installation failed.'
     }
@@ -136,7 +221,9 @@ try {
         (Join-Path $repoRoot '.venv\Scripts\python.exe'),
         $runtimeDirectory,
         (Join-Path $runtimeDirectory 'stale'),
-        (Join-Path $runtimeDirectory 'stale\prompt.txt')
+        (Join-Path $runtimeDirectory 'stale\prompt.txt'),
+        $ownerRightsFixtureDirectory,
+        $ownerRightsFixtureFile
     )
 
     $sameConfig = Join-Path $sameHome 'config.toml'
@@ -166,6 +253,7 @@ try {
     Assert-Equal (Get-PropertyValue $registered.transport.env 'MULTI_AGENT_RUNTIME_DIR') $runtimeDirectory 'Runtime directory'
     Assert-Equal (Get-PropertyValue $registered.transport.env 'MULTI_AGENT_ALLOWED_ROOTS_JSON') (ConvertTo-Json -InputObject @($repoRoot) -Compress) 'Allowed roots'
     Assert-Equal (Get-PropertyValue $registered.transport.env 'MULTI_AGENT_ENABLE_UNCONFINED_CODEX_REVIEWER') '1' 'Unconfined Codex opt-in'
+    Assert-Equal (Get-PropertyValue $registered.transport.env 'MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER') '1' 'Unconfined Copilot opt-in'
     Assert-Equal (Get-PropertyValue $registered.transport.env 'MULTI_AGENT_ENABLE_UNCONFINED_ANTIGRAVITY_REVIEWER') '1' 'Unconfined Antigravity opt-in'
     Assert-Equal (Get-PropertyValue $registered.transport.env 'CUSTOM_ROUTER_ENV') 'preserve-me' 'Custom environment'
     Assert-Equal $registered.startup_timeout_sec 33.0 'Startup timeout'
@@ -275,6 +363,9 @@ try {
     if (Get-PropertyValue $rebound.transport.env 'MULTI_AGENT_ENABLE_UNCONFINED_CODEX_REVIEWER') {
         throw 'ForceRebind inherited the unconfined Codex reviewer opt-in.'
     }
+    if (Get-PropertyValue $rebound.transport.env 'MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER') {
+        throw 'ForceRebind inherited the unconfined Copilot reviewer opt-in.'
+    }
     if (Get-PropertyValue $rebound.transport.env 'MULTI_AGENT_ENABLE_UNCONFINED_ANTIGRAVITY_REVIEWER') {
         throw 'ForceRebind inherited the unconfined Antigravity reviewer opt-in.'
     }
@@ -331,6 +422,10 @@ finally {
     $env:CODEX_HOME = $previousCodexHome
     $env:MULTI_AGENT_TEST_SHIM_FAIL = $previousShimFailure
     $env:LOCALAPPDATA = $previousLocalAppData
+    Remove-Variable -Name multiAgentOwnerRightsSetAclTargets -Scope Global -ErrorAction SilentlyContinue
+    if (Test-Path -LiteralPath $ownerRightsFixtureDirectory) {
+        Remove-Item -LiteralPath $ownerRightsFixtureDirectory -Recurse -Force
+    }
     $resolvedTestRoot = [IO.Path]::GetFullPath($testRoot)
     $resolvedTempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
     if ($resolvedTestRoot.StartsWith($resolvedTempRoot, [StringComparison]::OrdinalIgnoreCase) -and

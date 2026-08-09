@@ -55,7 +55,13 @@ function Set-TopLevelModelCatalog {
         return $Content.Substring(0, $keyMatch.Index) + $setting + $Content.Substring($keyMatch.Index + $keyMatch.Length)
     }
 
-    $insertion = $setting + $newline + $newline
+    $separator = if ($prefix.Length -gt 0 -and -not $prefix.EndsWith("`n")) {
+        $newline
+    }
+    else {
+        ''
+    }
+    $insertion = $separator + $setting + $newline + $newline
     return $Content.Insert($prefixEnd, $insertion)
 }
 

@@ -9,7 +9,7 @@ param(
     [string]$RuntimeDirectory = '',
     [string[]]$AllowedRoot = @(),
 
-    [ValidateRange(1, 86400)]
+    [ValidateRange(1, 3600)]
     [int]$RouterTimeoutSec = 300,
 
     [ValidateRange(1, 1000000)]
@@ -34,6 +34,7 @@ param(
     [switch]$AllowInsecureRemoteLmStudio,
     [switch]$AllowUnauthenticatedRemoteLmStudio,
     [switch]$EnableUnconfinedCodexReviewer,
+    [switch]$EnableUnconfinedCopilotReviewer,
     [switch]$EnableUnconfinedAntigravityReviewer,
     [switch]$AllowUnsafeCheckoutParent
 )
@@ -262,10 +263,19 @@ function Write-AtomicText {
         [Parameter(Mandatory = $true)][string]$Content
     )
 
-    $temporaryPath = "$Path.$([Guid]::NewGuid().ToString('N')).tmp"
     $utf8WithoutBom = New-Object Text.UTF8Encoding($false)
+    Write-AtomicBytes -Path $Path -Content ($utf8WithoutBom.GetBytes($Content))
+}
+
+function Write-AtomicBytes {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][byte[]]$Content
+    )
+
+    $temporaryPath = "$Path.$([Guid]::NewGuid().ToString('N')).tmp"
     try {
-        [IO.File]::WriteAllText($temporaryPath, $Content, $utf8WithoutBom)
+        [IO.File]::WriteAllBytes($temporaryPath, $Content)
         Move-Item -LiteralPath $temporaryPath -Destination $Path -Force
     }
     finally {
@@ -356,7 +366,9 @@ function Test-RestrictedAclItem {
         [Parameter(Mandatory = $true)][Security.Principal.SecurityIdentifier]$OwnerSid
     )
 
-    $allowedSids = @($OwnerSid.Value, 'S-1-5-18', 'S-1-5-32-544')
+    $ownerEquivalentSids = @($OwnerSid.Value, 'S-1-3-4')
+    $fixedTrustedSids = @('S-1-5-18', 'S-1-5-32-544')
+    $allowedSids = @($ownerEquivalentSids + $fixedTrustedSids)
     $acl = Get-Acl -LiteralPath $Item.FullName
     $actualOwner = $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value
     if ($actualOwner -ne $OwnerSid.Value -or -not $acl.AreAccessRulesProtected) {
@@ -364,7 +376,7 @@ function Test-RestrictedAclItem {
     }
 
     $rules = @($acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier]))
-    if ($rules.Count -ne $allowedSids.Count) {
+    if ($rules.Count -ne 3) {
         return $false
     }
     $expectedInheritance = if ($Item -is [IO.DirectoryInfo]) {
@@ -383,8 +395,11 @@ function Test-RestrictedAclItem {
             return $false
         }
     }
-    foreach ($allowedSid in $allowedSids) {
-        if (@($rules | Where-Object { $_.IdentityReference.Value -eq $allowedSid }).Count -ne 1) {
+    if (@($rules | Where-Object { $_.IdentityReference.Value -in $ownerEquivalentSids }).Count -ne 1) {
+        return $false
+    }
+    foreach ($fixedTrustedSid in $fixedTrustedSids) {
+        if (@($rules | Where-Object { $_.IdentityReference.Value -eq $fixedTrustedSid }).Count -ne 1) {
             return $false
         }
     }
@@ -586,6 +601,7 @@ function Update-McpServerSettings {
         'MULTI_AGENT_RUNTIME_DIR',
         'MULTI_AGENT_ALLOWED_ROOTS_JSON',
         'MULTI_AGENT_ENABLE_UNCONFINED_CODEX_REVIEWER',
+        'MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER',
         'MULTI_AGENT_ENABLE_UNCONFINED_ANTIGRAVITY_REVIEWER'
     )
     foreach ($managedName in $managedNames) {
@@ -708,6 +724,7 @@ if ($existingPointsHere) {
     $existingRuntimeDirectory = Get-PropertyValue $existingEnvironment 'MULTI_AGENT_RUNTIME_DIR'
     $existingAllowedRootsJson = Get-PropertyValue $existingEnvironment 'MULTI_AGENT_ALLOWED_ROOTS_JSON'
     $existingUnconfinedCodexReviewer = Get-PropertyValue $existingEnvironment 'MULTI_AGENT_ENABLE_UNCONFINED_CODEX_REVIEWER'
+    $existingUnconfinedCopilotReviewer = Get-PropertyValue $existingEnvironment 'MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER'
     $existingUnconfinedAntigravityReviewer = Get-PropertyValue $existingEnvironment 'MULTI_AGENT_ENABLE_UNCONFINED_ANTIGRAVITY_REVIEWER'
     if (-not $PSBoundParameters.ContainsKey('LmStudioBaseUrl') -and
         $existingBaseUrl) {
@@ -750,13 +767,17 @@ if ($existingPointsHere) {
         $existingUnconfinedCodexReviewer -eq '1') {
         $EnableUnconfinedCodexReviewer = $true
     }
+    if (-not $PSBoundParameters.ContainsKey('EnableUnconfinedCopilotReviewer') -and
+        $existingUnconfinedCopilotReviewer -eq '1') {
+        $EnableUnconfinedCopilotReviewer = $true
+    }
     if (-not $PSBoundParameters.ContainsKey('EnableUnconfinedAntigravityReviewer') -and
         $existingUnconfinedAntigravityReviewer -eq '1') {
         $EnableUnconfinedAntigravityReviewer = $true
     }
 
     $integerSettings = @(
-        @{ Parameter = 'RouterTimeoutSec'; Environment = 'MULTI_AGENT_TIMEOUT_SEC'; Minimum = 1; Maximum = 86400 },
+        @{ Parameter = 'RouterTimeoutSec'; Environment = 'MULTI_AGENT_TIMEOUT_SEC'; Minimum = 1; Maximum = 3600 },
         @{ Parameter = 'MaxChars'; Environment = 'MULTI_AGENT_MAX_CHARS'; Minimum = 1; Maximum = 1000000 },
         @{ Parameter = 'LmStudioMaxTokens'; Environment = 'MULTI_AGENT_LM_STUDIO_MAX_TOKENS'; Minimum = 1; Maximum = 1000000 }
     )
@@ -915,6 +936,9 @@ if ($AllowUnauthenticatedRemoteLmStudio) {
 if ($EnableUnconfinedCodexReviewer) {
     $environmentValues.MULTI_AGENT_ENABLE_UNCONFINED_CODEX_REVIEWER = '1'
 }
+if ($EnableUnconfinedCopilotReviewer) {
+    $environmentValues.MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER = '1'
+}
 if ($EnableUnconfinedAntigravityReviewer) {
     $environmentValues.MULTI_AGENT_ENABLE_UNCONFINED_ANTIGRAVITY_REVIEWER = '1'
 }
@@ -934,10 +958,40 @@ if ($PluginMode) {
         environment = $environmentValues
     }
     $pluginConfigText = ($pluginConfigDocument | ConvertTo-Json -Depth 5) + "`n"
-    Write-AtomicText $pluginConfigPath $pluginConfigText
-    Protect-RestrictedAclTree $repoRoot
-    Protect-RestrictedAclTree $runtimeDirectory
-    Protect-RestrictedAclTree $pluginConfigDirectory
+    $pluginConfigExisted = Test-Path -LiteralPath $pluginConfigPath -PathType Leaf
+    [byte[]]$originalPluginConfigBytes = if ($pluginConfigExisted) {
+        [IO.File]::ReadAllBytes($pluginConfigPath)
+    }
+    else {
+        @()
+    }
+    try {
+        Write-AtomicText $pluginConfigPath $pluginConfigText
+        Protect-RestrictedAclTree $repoRoot
+        Protect-RestrictedAclTree $runtimeDirectory
+        Protect-RestrictedAclTree $pluginConfigDirectory
+        if ([IO.File]::ReadAllText($pluginConfigPath) -cne $pluginConfigText) {
+            throw 'Plugin configuration verification returned unexpected content.'
+        }
+    }
+    catch {
+        $installFailure = $_
+        try {
+            if ($pluginConfigExisted) {
+                Write-AtomicBytes -Path $pluginConfigPath -Content $originalPluginConfigBytes
+            }
+            elseif (Test-Path -LiteralPath $pluginConfigPath) {
+                Remove-Item -LiteralPath $pluginConfigPath -Force
+            }
+        }
+        catch {
+            throw (
+                "Plugin installation failed and the prior machine-local configuration could not be restored. " +
+                "Install error: $($installFailure.Exception.Message) Rollback error: $($_.Exception.Message)"
+            )
+        }
+        throw $installFailure
+    }
 
     Write-Host ''
     Write-Host 'Prepared the plugin MCP runtime without creating a global Codex MCP registration.'
@@ -1020,6 +1074,10 @@ try {
     if (-not $environmentValues.Contains('MULTI_AGENT_ENABLE_UNCONFINED_CODEX_REVIEWER') -and
         (Get-PropertyValue $registeredEnvironment 'MULTI_AGENT_ENABLE_UNCONFINED_CODEX_REVIEWER')) {
         throw 'Codex registration verification unexpectedly retained the unconfined Codex reviewer opt-in.'
+    }
+    if (-not $environmentValues.Contains('MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER') -and
+        (Get-PropertyValue $registeredEnvironment 'MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER')) {
+        throw 'Codex registration verification unexpectedly retained the unconfined Copilot reviewer opt-in.'
     }
     if (-not $environmentValues.Contains('MULTI_AGENT_ENABLE_UNCONFINED_ANTIGRAVITY_REVIEWER') -and
         (Get-PropertyValue $registeredEnvironment 'MULTI_AGENT_ENABLE_UNCONFINED_ANTIGRAVITY_REVIEWER')) {

@@ -1,4 +1,4 @@
-# Integrated Agent Workflow
+# Integrated Agent Workflow v0.6.0
 
 A Windows-first Codex skill and hardened local MCP router for coordinated,
 model-aware implementation and review. Codex native sub-agents handle ordinary
@@ -58,6 +58,12 @@ separate model override for every reviewer. Results use the form
 `Agent (model: actual-model)` whenever the CLI or API reports the served model.
 Claude Code accepts a model override but does not expose a reliable catalog, so
 the router reports that limitation instead of inventing model names.
+
+When Claude is selected for difficult multi-file work, architecture, hard
+debugging, release-risk review, security review, or other high-risk validation,
+the coordinator skill requests the exact model ID `claude-opus-5` unless the
+user selected another Claude model. It never uses the `opus` alias for Opus 5
+and never silently substitutes another model after an exact request fails.
 
 ## Requirements
 
@@ -252,9 +258,48 @@ References:
 
 ## Integrated Agent Flow skill and GPT-5.6 Luna
 
-The distributable skill is under `skills/integrated-agent-flow`. Copy that
-folder into the current PC's `~/.codex/skills` directory when you want the
-coordinator workflow installed locally.
+The distributable skill is under `skills/integrated-agent-flow`. Plugin-managed
+installs should activate the complete v0.6.0 plugin rather than copy the skill
+separately. For a manual local skill install, archive the previous copy and the
+three v0.5 skill folders outside the active skills directory, then install a
+clean copy:
+
+```powershell
+$codexRoot = if ($env:CODEX_HOME) {
+  [IO.Path]::GetFullPath($env:CODEX_HOME)
+} else {
+  Join-Path ([Environment]::GetFolderPath('UserProfile')) '.codex'
+}
+$skillsRoot = Join-Path $codexRoot 'skills'
+$backupRoot = Join-Path $codexRoot (
+  'skill-backups\integrated-agent-workflow-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
+)
+$skillNamesToArchive = @(
+  'integrated-agent-flow',
+  'multi-agent-orchestration',
+  'multi-agent-implementation',
+  'multi-agent-review'
+)
+$existingSkillPaths = @(
+  $skillNamesToArchive |
+    ForEach-Object { Join-Path $skillsRoot $_ } |
+    Where-Object { Test-Path -LiteralPath $_ -PathType Container }
+)
+if ($existingSkillPaths.Count -gt 0) {
+  New-Item -ItemType Directory -Path $backupRoot -Force | Out-Null
+  foreach ($existingSkillPath in $existingSkillPaths) {
+    Move-Item -LiteralPath $existingSkillPath -Destination $backupRoot
+  }
+}
+New-Item -ItemType Directory -Path $skillsRoot -Force | Out-Null
+$targetSkillPath = Join-Path $skillsRoot 'integrated-agent-flow'
+Copy-Item -LiteralPath '.\skills\integrated-agent-flow' `
+  -Destination $targetSkillPath -Recurse
+```
+
+The archive is recoverable under `~/.codex/skill-backups`. Do not leave the old
+three folders under `~/.codex/skills`: their overlapping auto-trigger metadata
+can activate alongside v0.6.0. Fully restart Codex after changing active skills.
 
 Some Codex catalogs currently advertise `gpt-5.6-luna` as a v1 child model,
 which makes `spawn_agent` reject it even though the model itself is available.
@@ -305,7 +350,7 @@ variables relevant to that reviewer (for example, `OPENAI_API_KEY` for Codex or
 forwarded. Antigravity may keep its own CLI transcript under `~/.gemini`; use
 its retention controls when prompts or selected files are sensitive.
 
-### Codex reviewer risk opt-in
+### External reviewer risk opt-ins
 
 The separate `ask_codex` CLI reviewer is startup-policy gated. Its read-only
 sandbox prevents edits, but its shell can read other files accessible to the
@@ -324,6 +369,20 @@ Add `-PluginMode` when the plugin runtime is the selected installation mode.
 This is a machine-local startup setting; restart Codex after changing it.
 Prefer Codex's native child-agent orchestration when that read scope is not
 acceptable.
+
+GitHub Copilot CLI is gated separately because it discovers personal skills
+and other profile-level customization from the Windows account even when its
+built-in MCPs and custom instructions are disabled. It is therefore also
+disabled on a fresh install. Enable it only after accepting that prompts or
+prompt injection could expose profile metadata or other user-readable local
+content to GitHub Copilot:
+
+```powershell
+.\install.ps1 -EnableUnconfinedCopilotReviewer
+```
+
+Add `-PluginMode` when the plugin runtime is the selected installation mode.
+This is a machine-local startup setting; restart Codex after changing it.
 
 Antigravity is gated separately because its CLI has no no-tools/safe-mode switch
 and loads user permission rules. Its `--sandbox` option describes terminal
@@ -354,6 +413,7 @@ Ask each selected reviewer for one concrete risk and one improvement.
 - `MULTI_AGENT_ALLOWED_ROOTS_JSON`
 - `MULTI_AGENT_RUNTIME_DIR`
 - `MULTI_AGENT_ENABLE_UNCONFINED_CODEX_REVIEWER`
+- `MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER`
 - `MULTI_AGENT_ENABLE_UNCONFINED_ANTIGRAVITY_REVIEWER`
 - `MULTI_AGENT_LM_STUDIO_BASE_URL`
 - `MULTI_AGENT_LM_STUDIO_MODEL`
@@ -396,6 +456,12 @@ Standalone mode replaces only installer-managed fields for the named local
 registration and keeps custom and unrelated Codex configuration intact. Plugin
 mode refreshes its private environment and protected machine-local JSON without
 creating or changing a global MCP registration.
+
+If the skill was copied manually, rerun the clean-copy migration in
+**Integrated Agent Flow skill and GPT-5.6 Luna**. If Codex loads the repository
+as a plugin, activate the complete v0.6.0 bundle and verify that
+`integrated-agent-flow` is the only skill exposed by this plugin; do not overlay
+the v0.6.0 files onto an active v0.5.0 cache directory.
 
 ## Uninstall
 

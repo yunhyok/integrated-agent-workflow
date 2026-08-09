@@ -1,8 +1,9 @@
 """Shared MCP router for local and CLI-backed advisory agents.
 
 Tool-restricted reviewers and LM Studio receive only the prompt plus explicitly
-allowed context. Codex and Antigravity CLI reviewers are disabled by default
-because their available read tools cannot be configuration-independently confined.
+allowed context. Codex, Copilot, and Antigravity CLI reviewers are disabled by
+default because their file reads or profile discovery cannot be
+configuration-independently confined.
 """
 
 from __future__ import annotations
@@ -92,12 +93,15 @@ def _validate_lm_studio_transport(
 
 
 SERVER_ROOT = Path(__file__).resolve().parent
+ROUTER_VERSION = "0.6.0"
 DEFAULT_TIMEOUT_SEC = int(os.environ.get("MULTI_AGENT_TIMEOUT_SEC", "300"))
 DEFAULT_MAX_CHARS = int(os.environ.get("MULTI_AGENT_MAX_CHARS", "20000"))
 DEFAULT_MAX_FILE_CHARS = int(os.environ.get("MULTI_AGENT_MAX_FILE_CHARS", "60000"))
 MAX_TOTAL_CONTEXT_CHARS = 1_000_000
 MAX_CONTEXT_FILES = 32
 MAX_PROCESS_OUTPUT_BYTES = 8 * 1024 * 1024
+MAX_AGENT_TIMEOUT_SEC = 3600
+MAX_LM_STUDIO_TOKENS = 1_000_000
 LM_STUDIO_MAX_RESPONSE_BYTES = 8 * 1024 * 1024
 ANTIGRAVITY_MAX_PROMPT_CHARS = int(
     os.environ.get("MULTI_AGENT_ANTIGRAVITY_MAX_PROMPT_CHARS", "24000")
@@ -123,6 +127,7 @@ _validate_lm_studio_transport(
     ),
 )
 CODEX_REVIEWER_ENABLED = _env_flag("MULTI_AGENT_ENABLE_UNCONFINED_CODEX_REVIEWER")
+COPILOT_REVIEWER_ENABLED = _env_flag("MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER")
 ANTIGRAVITY_REVIEWER_ENABLED = _env_flag(
     "MULTI_AGENT_ENABLE_UNCONFINED_ANTIGRAVITY_REVIEWER"
 )
@@ -286,8 +291,9 @@ SERVER_INSTRUCTIONS = (
     "Use this server to ask local external coding agents for second opinions. "
     "Treat responses as advisory only. Codex owns final decisions, code edits, "
     "validation, and user-facing conclusions. Context files are accepted only "
-    "under machine-local administrator-approved roots. The Codex CLI reviewer "
-    "is disabled unless the administrator explicitly opts into its unconfined reads."
+    "under machine-local administrator-approved roots. The Codex, Copilot, and "
+    "Antigravity CLI reviewers are disabled unless the administrator explicitly "
+    "opts into their unconfined profile or file-read risks at server startup."
 )
 
 mcp = FastMCP("multi-agent-router", instructions=SERVER_INSTRUCTIONS)
@@ -501,6 +507,21 @@ def _context_from_files(
 _SAFE_CLI_MODEL = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/@+\-]{0,199}$")
 
 
+def _validate_timeout_sec(
+    timeout_sec: int, *, maximum: int = MAX_AGENT_TIMEOUT_SEC
+) -> None:
+    if type(timeout_sec) is not int or not 1 <= timeout_sec <= maximum:
+        raise ValueError(f"timeout_sec must be an integer between 1 and {maximum}")
+
+
+def _validate_lm_studio_max_tokens(max_tokens: int) -> None:
+    if type(max_tokens) is not int or not 1 <= max_tokens <= MAX_LM_STUDIO_TOKENS:
+        raise ValueError(
+            "lm_studio_max_tokens must be an integer between 1 and "
+            f"{MAX_LM_STUDIO_TOKENS}"
+        )
+
+
 def _validate_cli_model(model: str | None) -> None:
     if model is not None and not _SAFE_CLI_MODEL.fullmatch(model):
         raise ValueError(
@@ -597,22 +618,28 @@ def _run_agent_process(
     stdout_buffer = bytearray()
     stderr_buffer = bytearray()
     output_limit_exceeded = threading.Event()
-    termination_lock = threading.Lock()
+    output_budget_lock = threading.Lock()
+    output_bytes_captured = 0
 
     def drain(stream, buffer: bytearray) -> None:
+        nonlocal output_bytes_captured
         try:
             while True:
                 chunk = stream.read(65536)
                 if not chunk:
                     break
-                remaining = MAX_PROCESS_OUTPUT_BYTES + 1 - len(buffer)
-                if remaining > 0:
-                    buffer.extend(chunk[:remaining])
-                if len(buffer) > MAX_PROCESS_OUTPUT_BYTES or len(chunk) > remaining:
-                    with termination_lock:
-                        if not output_limit_exceeded.is_set():
-                            output_limit_exceeded.set()
-                            _terminate_process_tree(process)
+                terminate = False
+                with output_budget_lock:
+                    remaining = MAX_PROCESS_OUTPUT_BYTES - output_bytes_captured
+                    captured = min(len(chunk), max(0, remaining))
+                    if captured:
+                        buffer.extend(chunk[:captured])
+                        output_bytes_captured += captured
+                    if captured < len(chunk) and not output_limit_exceeded.is_set():
+                        output_limit_exceeded.set()
+                        terminate = True
+                if terminate:
+                    _terminate_process_tree(process)
         finally:
             stream.close()
 
@@ -652,19 +679,15 @@ def _run_agent_process(
     stderr_thread.join()
     if stdin_thread is not None:
         stdin_thread.join(timeout=1)
-    stdout = bytes(stdout_buffer[:MAX_PROCESS_OUTPUT_BYTES]).decode(
-        "utf-8", errors="replace"
-    )
-    stderr = bytes(stderr_buffer[:MAX_PROCESS_OUTPUT_BYTES]).decode(
-        "utf-8", errors="replace"
-    )
+    stdout = bytes(stdout_buffer).decode("utf-8", errors="replace")
+    stderr = bytes(stderr_buffer).decode("utf-8", errors="replace")
     if timed_out:
         raise subprocess.TimeoutExpired(
             command, timeout_sec, output=stdout, stderr=stderr
         )
     if output_limit_exceeded.is_set():
         raise subprocess.SubprocessError(
-            "Reviewer output exceeded the 8 MiB safety limit"
+            "Aggregate reviewer output exceeded the 8 MiB safety limit"
         )
     return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
 
@@ -1047,10 +1070,21 @@ def _agent_failure(
         if requested_model
         else "unknown"
     )
+    if completed.returncode:
+        failure_detail = (
+            f"{name} exited with code {completed.returncode}. "
+            "Raw reviewer output was suppressed."
+        )
+    else:
+        failure_detail = (
+            f"{name} did not return a parseable final response. "
+            "Raw reviewer output was suppressed."
+        )
+    failure_detail = _redact_secrets(failure_detail)[: max(0, max_chars)]
     return AgentResult(
         name,
         model_label,
-        _process_output(completed, max_chars),
+        failure_detail,
         status="execution_failed",
         requested_model=requested_model,
         observed_models=(actual_model,) if actual_model else (),
@@ -1104,25 +1138,16 @@ def _extract_antigravity_details(transcript: Path) -> tuple[str | None, str | No
                     record = json.loads(line)
                 except json.JSONDecodeError:
                     continue
-                raw_model = (
-                    record.get("model")
-                    or record.get("model_name")
-                    or record.get("modelName")
-                )
-                if isinstance(raw_model, str) and raw_model.strip():
-                    model_name = raw_model.strip()
-                content = record.get("content")
-                if record.get("source") == "USER_EXPLICIT" and isinstance(content, str):
-                    match = re.search(
-                        r"changed setting `Model Selection` from .*? to (.+?)\. No need",
-                        content,
+                if record.get("source") == "MODEL":
+                    raw_model = (
+                        record.get("model")
+                        or record.get("model_name")
+                        or record.get("modelName")
                     )
-                    if match:
-                        model_name = match.group(1).strip()
-                if record.get("source") == "MODEL" and isinstance(
-                    record.get("content"), str
-                ):
-                    last_model_content = record["content"].strip()
+                    if isinstance(raw_model, str) and raw_model.strip():
+                        model_name = raw_model.strip()
+                    if isinstance(record.get("content"), str):
+                        last_model_content = record["content"].strip()
     except OSError:
         return None, None
     return last_model_content, model_name
@@ -1240,6 +1265,7 @@ def _ask_codex(
             requested_model=model,
             error_message="Codex reviewer is disabled by startup policy.",
         )
+    _validate_timeout_sec(timeout_sec)
     _validate_cli_model(model)
     codex = _resolve_codex_command()
     command = [codex]
@@ -1293,6 +1319,7 @@ def _ask_claude(
     context_files: Sequence[str] | None = None,
     model: str | None = None,
 ) -> AgentResult:
+    _validate_timeout_sec(timeout_sec)
     _validate_cli_model(model)
     claude = _resolve_command(
         "MULTI_AGENT_CLAUDE_CMD",
@@ -1349,6 +1376,19 @@ def _ask_copilot(
     context_files: Sequence[str] | None = None,
     model: str | None = None,
 ) -> AgentResult:
+    if not COPILOT_REVIEWER_ENABLED:
+        return AgentResult(
+            "Copilot",
+            model or "disabled",
+            "Copilot reviewer is disabled by policy because the CLI discovers "
+            "personal profile skills and may emit their metadata. An administrator "
+            "may opt in at MCP startup with "
+            "MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER=1.",
+            status="unavailable",
+            requested_model=model,
+            error_message="Copilot reviewer is disabled by startup policy.",
+        )
+    _validate_timeout_sec(timeout_sec)
     _validate_cli_model(model)
     copilot = _resolve_command(
         "MULTI_AGENT_COPILOT_CMD",
@@ -1429,6 +1469,7 @@ def _ask_antigravity(
             requested_model=model,
             error_message="Antigravity reviewer is disabled by startup policy.",
         )
+    _validate_timeout_sec(timeout_sec)
     _validate_cli_model(model)
     agy = _resolve_command(
         "MULTI_AGENT_ANTIGRAVITY_CMD",
@@ -1505,6 +1546,8 @@ def _ask_lm_studio(
     max_tokens: int = LM_STUDIO_MAX_TOKENS,
     reasoning_effort: str | None = LM_STUDIO_REASONING_EFFORT,
 ) -> AgentResult:
+    _validate_timeout_sec(timeout_sec)
+    _validate_lm_studio_max_tokens(max_tokens)
     selected_model = (model or LM_STUDIO_DEFAULT_MODEL).strip()
     if not selected_model:
         return AgentResult(
@@ -1532,7 +1575,7 @@ def _ask_lm_studio(
     request_payload: dict[str, object] = {
         "model": selected_model,
         "messages": [{"role": "user", "content": full_prompt}],
-        "max_tokens": max(1, max_tokens),
+        "max_tokens": max_tokens,
         "temperature": 0,
         "stream": False,
     }
@@ -1627,8 +1670,8 @@ def _safe_agent_call(name: str, model: str | None, callback) -> AgentResult:
             requested_model=model,
             error_message=message,
         )
-    except subprocess.TimeoutExpired as exc:
-        message = _redact_secrets(f"CLI invocation timed out: {exc}")
+    except subprocess.TimeoutExpired:
+        message = f"{name} CLI invocation timed out; command details were suppressed."
         return AgentResult(
             name,
             model or "unknown",
@@ -1638,7 +1681,10 @@ def _safe_agent_call(name: str, model: str | None, callback) -> AgentResult:
             error_message=message,
         )
     except (OSError, subprocess.SubprocessError) as exc:
-        message = _redact_secrets(f"CLI invocation failed: {exc}")
+        message = (
+            f"{name} CLI invocation failed ({type(exc).__name__}); "
+            "command and raw output details were suppressed."
+        )
         return AgentResult(
             name,
             model or "unknown",
@@ -1691,6 +1737,13 @@ def _canonicalize_antigravity_model(actual_model: str | None) -> str | None:
 
 def _available_models(agent: str) -> list[str]:
     normalized = agent.strip().lower()
+    disabled_by_policy = (
+        (normalized == "codex" and not CODEX_REVIEWER_ENABLED)
+        or (normalized == "copilot" and not COPILOT_REVIEWER_ENABLED)
+        or (normalized in {"antigravity", "agy"} and not ANTIGRAVITY_REVIEWER_ENABLED)
+    )
+    if disabled_by_policy:
+        raise ValueError(f"{normalized} model discovery is disabled by startup policy")
     if normalized == "codex":
         command = _resolve_codex_command()
         completed = _run_agent_process(
@@ -1992,8 +2045,10 @@ def _doctor_agent_records() -> list[dict]:
     }
     records: list[dict] = []
     for agent_id, resolver in definitions.items():
-        gated = (agent_id == "codex" and not CODEX_REVIEWER_ENABLED) or (
-            agent_id == "antigravity" and not ANTIGRAVITY_REVIEWER_ENABLED
+        gated = (
+            (agent_id == "codex" and not CODEX_REVIEWER_ENABLED)
+            or (agent_id == "copilot" and not COPILOT_REVIEWER_ENABLED)
+            or (agent_id == "antigravity" and not ANTIGRAVITY_REVIEWER_ENABLED)
         )
         if gated:
             records.append(
@@ -2026,8 +2081,7 @@ def _doctor_agent_records() -> list[dict]:
 @mcp.tool()
 def doctor(timeout_sec: int = 15) -> str:
     """Return structured, non-secret availability and security-policy diagnostics."""
-    if not 1 <= timeout_sec <= 60:
-        raise ValueError("timeout_sec must be between 1 and 60")
+    _validate_timeout_sec(timeout_sec, maximum=60)
     agents = _doctor_agent_records()
     lm_studio = _lm_studio_models_result(timeout_sec)
     agents.append(
@@ -2040,6 +2094,7 @@ def doctor(timeout_sec: int = 15) -> str:
     available = any(item["status"] == "available" for item in agents)
     report = {
         "schemaVersion": 1,
+        "routerVersion": ROUTER_VERSION,
         "status": "ok" if available else "degraded",
         "createdAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "security": {
@@ -2047,6 +2102,7 @@ def doctor(timeout_sec: int = 15) -> str:
             "allowedContextRoots": len(ALLOWED_CONTEXT_ROOTS),
             "minimalChildEnvironment": True,
             "codexReviewerEnabled": CODEX_REVIEWER_ENABLED,
+            "copilotReviewerEnabled": COPILOT_REVIEWER_ENABLED,
             "antigravityReviewerEnabled": ANTIGRAVITY_REVIEWER_ENABLED,
             "lmStudioRedirectsAllowed": False,
         },
@@ -2059,8 +2115,7 @@ def doctor(timeout_sec: int = 15) -> str:
 @mcp.tool()
 def list_lmstudio_models(timeout_sec: int = 15) -> str:
     """List merged native and OpenAI-compatible LM Studio model metadata."""
-    if not 1 <= timeout_sec <= 60:
-        raise ValueError("timeout_sec must be between 1 and 60")
+    _validate_timeout_sec(timeout_sec, maximum=60)
     return _redact_secrets(
         json.dumps(_lm_studio_models_result(timeout_sec), ensure_ascii=False, indent=2)
     )
@@ -2081,6 +2136,8 @@ def run_agent(
     lm_studio_reasoning_effort: str | None = LM_STUDIO_REASONING_EFFORT,
 ) -> str:
     """Run one policy-confined external adviser and return structured evidence."""
+    _validate_timeout_sec(timeout_sec)
+    _validate_lm_studio_max_tokens(lm_studio_max_tokens)
     canonical_id = _normalize_agent_id(agent_id)
     requested_model = _requested_model_for(canonical_id, models)
     if write_policy not in {"read_only", "patch_proposal"}:
@@ -2097,10 +2154,6 @@ def run_agent(
             ensure_ascii=False,
             indent=2,
         )
-    if not 1 <= timeout_sec <= 3600:
-        raise ValueError("timeout_sec must be between 1 and 3600")
-    if lm_studio_max_tokens < 1:
-        raise ValueError("lm_studio_max_tokens must be positive")
     cwd = _normalize_working_dir(working_dir)
     context_snapshot = _preflight_structured_request(
         {canonical_id: requested_model}, cwd, context_files
@@ -2139,7 +2192,9 @@ def run_panel(
     lm_studio_max_tokens: int = LM_STUDIO_MAX_TOKENS,
     lm_studio_reasoning_effort: str | None = LM_STUDIO_REASONING_EFFORT,
 ) -> str:
-    """Run independent external advisers concurrently; defaults to Claude and Copilot."""
+    """Run advisers concurrently; default Copilot remains startup-policy gated."""
+    _validate_timeout_sec(timeout_sec)
+    _validate_lm_studio_max_tokens(lm_studio_max_tokens)
     selected = agent_ids if agent_ids is not None else ["claude", "copilot"]
     canonical_ids = list(dict.fromkeys(_normalize_agent_id(item) for item in selected))
     if not canonical_ids:
@@ -2177,10 +2232,6 @@ def run_panel(
             ensure_ascii=False,
             indent=2,
         )
-    if not 1 <= timeout_sec <= 3600:
-        raise ValueError("timeout_sec must be between 1 and 3600")
-    if lm_studio_max_tokens < 1:
-        raise ValueError("lm_studio_max_tokens must be positive")
     cwd = _normalize_working_dir(working_dir)
     requested_models = {
         agent_id: _requested_model_for(agent_id, models) for agent_id in canonical_ids
@@ -2265,6 +2316,8 @@ def get_agent_status() -> str:
         ),
     ]
     rows = [
+        f"Integrated Agent Workflow Router v{ROUTER_VERSION}",
+        "",
         "| Agent | Available | Interface/version | Default/actual model | `model` override |",
         "|---|---|---|---|---|",
     ]
@@ -2273,6 +2326,12 @@ def get_agent_status() -> str:
             rows.append(
                 "| Codex | disabled by policy | not started | "
                 "read-only sandbox does not confine reads | no |"
+            )
+            continue
+        if name == "Copilot" and not COPILOT_REVIEWER_ENABLED:
+            rows.append(
+                "| Copilot | disabled by policy | not started | "
+                "personal profile skills are not isolated | no |"
             )
             continue
         if name == "Antigravity" and not ANTIGRAVITY_REVIEWER_ENABLED:
@@ -2354,6 +2413,7 @@ def ask_codex(
     timeout_sec: int = DEFAULT_TIMEOUT_SEC,
 ) -> str:
     """Ask Codex only after an administrator opts into its unconfined file-read risk."""
+    _validate_timeout_sec(timeout_sec)
     cwd = _normalize_working_dir(working_dir)
     result = _safe_agent_call(
         "Codex",
@@ -2374,6 +2434,7 @@ def ask_claude(
     timeout_sec: int = DEFAULT_TIMEOUT_SEC,
 ) -> str:
     """Ask tool-disabled Claude Code for an advisory second opinion."""
+    _validate_timeout_sec(timeout_sec)
     cwd = _normalize_working_dir(working_dir)
     result = _safe_agent_call(
         "Claude",
@@ -2393,7 +2454,8 @@ def ask_copilot(
     model: str | None = None,
     timeout_sec: int = DEFAULT_TIMEOUT_SEC,
 ) -> str:
-    """Ask view-confined GitHub Copilot CLI for an advisory second opinion."""
+    """Ask Copilot only after an administrator opts into its profile-discovery risk."""
+    _validate_timeout_sec(timeout_sec)
     cwd = _normalize_working_dir(working_dir)
     result = _safe_agent_call(
         "Copilot",
@@ -2414,6 +2476,7 @@ def ask_antigravity(
     timeout_sec: int = DEFAULT_TIMEOUT_SEC,
 ) -> str:
     """Ask Antigravity only after an administrator opts into its user-rule risk."""
+    _validate_timeout_sec(timeout_sec)
     cwd = _normalize_working_dir(working_dir)
     result = _safe_agent_call(
         "Antigravity",
@@ -2436,6 +2499,8 @@ def ask_lm_studio(
     reasoning_effort: str | None = LM_STUDIO_REASONING_EFFORT,
 ) -> str:
     """Ask the configured local LM Studio model for a read-only second opinion."""
+    _validate_timeout_sec(timeout_sec)
+    _validate_lm_studio_max_tokens(max_tokens)
     cwd = _normalize_working_dir(working_dir)
     requested_model = model or LM_STUDIO_DEFAULT_MODEL
     result = _safe_agent_call(
@@ -2474,12 +2539,10 @@ def collect_reviews(
     lm_studio_reasoning_effort: str | None = LM_STUDIO_REASONING_EFFORT,
     timeout_sec: int = DEFAULT_TIMEOUT_SEC,
 ) -> str:
-    """Collect parallel advisory reviews; Codex remains startup-policy gated."""
+    """Collect reviews while unconfined CLI routes remain startup-policy gated."""
+    _validate_timeout_sec(timeout_sec)
+    _validate_lm_studio_max_tokens(lm_studio_max_tokens)
     cwd = _normalize_working_dir(working_dir)
-    if not 1 <= timeout_sec <= 3600:
-        raise ValueError("timeout_sec must be between 1 and 3600")
-    if lm_studio_max_tokens < 1:
-        raise ValueError("lm_studio_max_tokens must be positive")
     selected_cli_models = (
         (include_codex, codex_model),
         (include_claude, claude_model),
