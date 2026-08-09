@@ -1,4 +1,4 @@
-# Integrated Agent Workflow v0.6.0
+# Integrated Agent Workflow v0.6.1
 
 A Windows-first Codex skill and hardened local MCP router for coordinated,
 model-aware implementation and review. Codex native sub-agents handle ordinary
@@ -173,11 +173,15 @@ are required. Files outside these machine-local roots are rejected before an
 external process or HTTP request starts. Do not approve a profile, home, drive,
 credential, or secrets directory.
 
-If LM Studio is running and advertises exactly one LLM, the installer selects
-that model. With zero or multiple advertised LLMs, the default remains unset;
-pass `model=...` to `ask_lm_studio` or rerun the installer with
-`-LmStudioModel`. An explicitly selected model must be advertised, including
-when the server reports an empty LLM list.
+The installer treats each nonempty LM Studio LLM native model `key` and every
+nonempty `loaded_instances[].id` as advertised model identifiers. Use the
+loaded-instance ID when that is the model ID returned by chat responses. If the
+combined unique list contains exactly one identifier, the installer selects it
+automatically.
+With zero or multiple identifiers, the default remains unset; pass `model=...`
+to `ask_lm_studio` or rerun the installer with `-LmStudioModel`. An explicitly
+selected model must be in that advertised list, including when the server
+reports an empty LLM list.
 
 ## LM Studio addresses are machine-local configuration
 
@@ -259,7 +263,7 @@ References:
 ## Integrated Agent Flow skill and GPT-5.6 Luna
 
 The distributable skill is under `skills/integrated-agent-flow`. Plugin-managed
-installs should activate the complete v0.6.0 plugin rather than copy the skill
+installs should activate the complete v0.6.1 plugin rather than copy the skill
 separately. For a manual local skill install, archive the previous copy and the
 three v0.5 skill folders outside the active skills directory, then install a
 clean copy:
@@ -299,7 +303,7 @@ Copy-Item -LiteralPath '.\skills\integrated-agent-flow' `
 
 The archive is recoverable under `~/.codex/skill-backups`. Do not leave the old
 three folders under `~/.codex/skills`: their overlapping auto-trigger metadata
-can activate alongside v0.6.0. Fully restart Codex after changing active skills.
+can activate alongside v0.6.1. Fully restart Codex after changing active skills.
 
 Some Codex catalogs currently advertise `gpt-5.6-luna` as a v1 child model,
 which makes `spawn_agent` reject it even though the model itself is available.
@@ -459,9 +463,9 @@ creating or changing a global MCP registration.
 
 If the skill was copied manually, rerun the clean-copy migration in
 **Integrated Agent Flow skill and GPT-5.6 Luna**. If Codex loads the repository
-as a plugin, activate the complete v0.6.0 bundle and verify that
+as a plugin, activate the complete v0.6.1 bundle and verify that
 `integrated-agent-flow` is the only skill exposed by this plugin; do not overlay
-the v0.6.0 files onto an active v0.5.0 cache directory.
+the v0.6.1 files onto an active v0.5.0 cache directory.
 
 ## Uninstall
 

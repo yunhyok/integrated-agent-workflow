@@ -137,6 +137,9 @@ $unsafeCheckout = Join-Path $unsafeCheckoutParent 'checkout'
 $broadRuntimeDirectory = Join-Path $testRoot 'documents'
 $ownerRightsFixtureDirectory = Join-Path $repoRoot ('.tmp\owner-rights-install-smoke-' + [Guid]::NewGuid().ToString('N'))
 $ownerRightsFixtureFile = Join-Path $ownerRightsFixtureDirectory 'fixture.txt'
+$lmStudioProbeBaseUrl = 'http://127.0.0.1:4322'
+$lmStudioNativeModelKey = 'example/native-model-key'
+$lmStudioLoadedInstanceId = 'example/loaded-instance-id'
 
 try {
     New-Item -ItemType Directory -Path $sameHome, $foreignHome, $rollbackHome, $shimDirectory, $unsafeCheckout | Out-Null
@@ -177,6 +180,42 @@ try {
         }
         Microsoft.PowerShell.Security\Set-Acl -LiteralPath $LiteralPath -AclObject $AclObject
     }
+    $global:multiAgentLmStudioProbeUrl = "$lmStudioProbeBaseUrl/api/v1/models"
+    $global:multiAgentLmStudioProbeCount = 0
+    $global:multiAgentLmStudioProbePayload = [pscustomobject]@{
+        models = @(
+            [pscustomobject]@{
+                type = 'llm'
+                key = $lmStudioNativeModelKey
+                loaded_instances = @(
+                    [pscustomobject]@{ id = $lmStudioLoadedInstanceId }
+                    [pscustomobject]@{ id = $lmStudioLoadedInstanceId }
+                    [pscustomobject]@{ id = '' }
+                    [pscustomobject]@{ id = '   ' }
+                )
+            }
+            [pscustomobject]@{
+                type = 'embedding'
+                key = 'embedding/native-key'
+                loaded_instances = @([pscustomobject]@{ id = 'embedding/loaded-instance' })
+            }
+        )
+    }
+    function Invoke-RestMethod {
+        param(
+            [string]$Method,
+            [string]$Uri,
+            $Headers,
+            [int]$TimeoutSec,
+            [int]$MaximumRedirection
+        )
+
+        if ($Uri -ne $global:multiAgentLmStudioProbeUrl) {
+            throw "Unexpected LM Studio probe URL: $Uri"
+        }
+        $global:multiAgentLmStudioProbeCount++
+        return $global:multiAgentLmStudioProbePayload
+    }
     $env:LOCALAPPDATA = $smokeLocalAppData
     $env:CODEX_HOME = $sameHome
 
@@ -208,6 +247,15 @@ try {
         throw 'Checkout under an ancestor with untrusted delete rights was accepted.'
     }
     & $unsafeInstaller -AllowUnsafeCheckoutParent -WhatIf -LmStudioBaseUrl 'http://127.0.0.1:9' -LmStudioModel 'offline/not-probed'
+
+    & $installer @installerSafetyArgs -SkipDependencyInstall -LmStudioBaseUrl $lmStudioProbeBaseUrl -LmStudioModel $lmStudioLoadedInstanceId -RuntimeDirectory $runtimeDirectory -AllowedRoot $repoRoot
+    $loadedInstanceRegistration = (& $realCodex mcp get multi_agent --json | Out-String) | ConvertFrom-Json
+    Assert-Equal (Get-PropertyValue $loadedInstanceRegistration.transport.env 'MULTI_AGENT_LM_STUDIO_MODEL') $lmStudioLoadedInstanceId 'Loaded instance model'
+
+    & $installer @installerSafetyArgs -SkipDependencyInstall -LmStudioBaseUrl $lmStudioProbeBaseUrl -LmStudioModel $lmStudioNativeModelKey -RuntimeDirectory $runtimeDirectory -AllowedRoot $repoRoot
+    $nativeKeyRegistration = (& $realCodex mcp get multi_agent --json | Out-String) | ConvertFrom-Json
+    Assert-Equal (Get-PropertyValue $nativeKeyRegistration.transport.env 'MULTI_AGENT_LM_STUDIO_MODEL') $lmStudioNativeModelKey 'Native model key'
+    Assert-Equal $global:multiAgentLmStudioProbeCount 2 'LM Studio probe count'
 
     & $installer @installerSafetyArgs -SkipDependencyInstall -SkipLmStudioProbe -LmStudioBaseUrl 'http://127.0.0.1:4321' -LmStudioModel 'test/model' -RuntimeDirectory $runtimeDirectory -AllowedRoot $repoRoot -EnableUnconfinedCodexReviewer -EnableUnconfinedCopilotReviewer -EnableUnconfinedAntigravityReviewer
     if ($LASTEXITCODE -ne 0) {
@@ -423,6 +471,9 @@ finally {
     $env:MULTI_AGENT_TEST_SHIM_FAIL = $previousShimFailure
     $env:LOCALAPPDATA = $previousLocalAppData
     Remove-Variable -Name multiAgentOwnerRightsSetAclTargets -Scope Global -ErrorAction SilentlyContinue
+    Remove-Variable -Name multiAgentLmStudioProbeUrl -Scope Global -ErrorAction SilentlyContinue
+    Remove-Variable -Name multiAgentLmStudioProbeCount -Scope Global -ErrorAction SilentlyContinue
+    Remove-Variable -Name multiAgentLmStudioProbePayload -Scope Global -ErrorAction SilentlyContinue
     if (Test-Path -LiteralPath $ownerRightsFixtureDirectory) {
         Remove-Item -LiteralPath $ownerRightsFixtureDirectory -Recurse -Force
     }

@@ -862,10 +862,23 @@ if (-not $SkipLmStudioProbe) {
     try {
         $probe = Invoke-RestMethod -Method Get -Uri "$($endpoint.RootUrl)/api/v1/models" -Headers $headers -TimeoutSec 10 -MaximumRedirection 0
         $models = @(
-            $probe.models |
-                Where-Object { $_.type -eq 'llm' -and $_.key } |
-                ForEach-Object { [string]$_.key } |
-                Select-Object -Unique
+            @(
+                foreach ($nativeModel in @(Get-PropertyValue $probe 'models')) {
+                    if ((Get-PropertyValue $nativeModel 'type') -ne 'llm') {
+                        continue
+                    }
+                    $nativeKey = Get-PropertyValue $nativeModel 'key'
+                    if ($nativeKey -is [string] -and $nativeKey.Trim()) {
+                        $nativeKey.Trim()
+                    }
+                    foreach ($loadedInstance in @(Get-PropertyValue $nativeModel 'loaded_instances')) {
+                        $loadedInstanceId = Get-PropertyValue $loadedInstance 'id'
+                        if ($loadedInstanceId -is [string] -and $loadedInstanceId.Trim()) {
+                            $loadedInstanceId.Trim()
+                        }
+                    }
+                }
+            ) | Select-Object -Unique
         )
         if ($LmStudioModel -and $LmStudioModel -notin $models) {
             $availableModels = if ($models.Count -gt 0) { $models -join ', ' } else { '(none)' }
