@@ -1,13 +1,19 @@
-import type { AgentId, AgentResult } from "../common/result-schema.js";
+import type { AgentId, AgentResult, WritePolicy } from "../common/result-schema.js";
 
 export interface BuiltCommand {
   command: string;
   args: string[];
   input?: string;
+  inputMode?: "stdin" | "temporary_file";
 }
 
 export interface BuildCommandOptions {
   timeoutMs: number;
+  requestedModel?: string;
+  writePolicy: WritePolicy;
+  providerBaseUrl?: string;
+  providerApiKeyEnvName?: string;
+  modelContextWindow?: number;
 }
 
 export interface CliAdapter {

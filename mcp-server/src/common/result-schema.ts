@@ -1,7 +1,7 @@
 export const pluginIdentity = {
   name: "Integrated Agent Workflow",
   packageName: "integrated-agent-workflow",
-  version: "0.1.0"
+  version: "0.5.0"
 } as const;
 
 export const AGENT_STATUSES = [
@@ -15,14 +15,20 @@ export const AGENT_STATUSES = [
 ] as const;
 
 export type AgentStatus = (typeof AGENT_STATUSES)[number];
-export type AgentId = "claude" | "copilot" | "antigravity";
+export type AgentId = "codex" | "lmstudio" | "claude" | "copilot" | "antigravity";
 export type AgentPurpose = "implementation" | "review" | "general";
 export type WritePolicy = "read_only" | "patch_proposal" | "isolated_write";
+export type ModelMatch = "confirmed" | "mismatch" | "unverified";
+export type ModelObservationSource = "claude_cli_json_modelUsage";
 
 export interface AgentResult {
   plugin: typeof pluginIdentity;
   agentId: AgentId;
   displayName: string;
+  requestedModel?: string;
+  observedModels?: string[];
+  modelMatch: ModelMatch;
+  modelObservationSource?: ModelObservationSource;
   status: AgentStatus;
   createdAt: string;
   durationMs: number;
@@ -37,6 +43,10 @@ export interface AgentResult {
 export interface AgentResultInput {
   agentId: AgentId;
   displayName: string;
+  requestedModel?: string;
+  observedModels?: string[];
+  modelMatch?: ModelMatch;
+  modelObservationSource?: ModelObservationSource;
   status: AgentStatus;
   durationMs: number;
   exitCode?: number | null;
@@ -52,6 +62,10 @@ export function makeAgentResult(input: AgentResultInput): AgentResult {
     plugin: pluginIdentity,
     agentId: input.agentId,
     displayName: input.displayName,
+    requestedModel: input.requestedModel,
+    observedModels: input.observedModels,
+    modelMatch: input.modelMatch ?? "unverified",
+    modelObservationSource: input.modelObservationSource,
     status: input.status,
     createdAt: new Date().toISOString(),
     durationMs: input.durationMs,

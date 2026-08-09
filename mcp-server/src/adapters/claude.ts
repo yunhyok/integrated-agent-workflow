@@ -6,10 +6,20 @@ export const claudeAdapter: CliAdapter = {
   binaryName: "claude",
   versionArgs: ["--version"],
   authHint: "Run the Claude CLI login command, then rerun doctor.",
-  buildCommand(prompt) {
+  buildCommand(prompt, options) {
+    const permissionMode = options.writePolicy === "isolated_write" ? "acceptEdits" : "plan";
+    const args = [
+      "--permission-mode",
+      permissionMode,
+      "--output-format",
+      "json",
+      "--no-session-persistence"
+    ];
+    if (options.requestedModel) args.push("--model", options.requestedModel);
+    args.push("-p");
     return {
       command: "claude",
-      args: ["-p"],
+      args,
       input: prompt
     };
   }

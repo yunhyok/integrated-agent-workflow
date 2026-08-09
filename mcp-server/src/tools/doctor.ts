@@ -1,9 +1,11 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { adapters } from "../adapters/index.js";
+import { getLMStudioConfig } from "../common/lmstudio-config.js";
 import { pluginIdentity } from "../common/result-schema.js";
 import { runProcess } from "../common/process-runner.js";
 import { getWorkspaceState, type WorkspaceState } from "../common/workspace-safety.js";
+import { listLMStudioModels } from "./lmstudio-models.js";
 
 export interface DoctorOptions {
   cwd: string;
@@ -21,6 +23,11 @@ export interface DoctorAgentStatus {
   authStatus: "unknown" | "available" | "unavailable";
   dryRunSupported: "unknown" | "not_checked";
   authHint: string;
+  endpoint?: string;
+  configuredModel?: string;
+  configuredModelAvailable?: boolean;
+  availableModels?: string[];
+  errorMessage?: string;
 }
 
 export interface DoctorReport {
@@ -43,6 +50,11 @@ export async function createDoctorReport(options: DoctorOptions): Promise<Doctor
     let version: string | undefined;
     let status: "available" | "unavailable" = "unavailable";
     let authStatus: "unknown" | "available" | "unavailable" = options.runVersionCheck ? "unknown" : "unavailable";
+    let endpoint: string | undefined;
+    let configuredModel: string | undefined;
+    let configuredModelAvailable: boolean | undefined;
+    let availableModels: string[] | undefined;
+    let errorMessage: string | undefined;
 
     if (options.runVersionCheck) {
       const result = await runProcess(adapter.binaryName, adapter.versionArgs, {
@@ -52,6 +64,32 @@ export async function createDoctorReport(options: DoctorOptions): Promise<Doctor
       status = result.status === "ok" ? "available" : "unavailable";
       authStatus = status === "available" ? "unknown" : "unavailable";
       version = result.stdout.trim() || undefined;
+
+      if (adapter.id === "lmstudio") {
+        try {
+          const lmStudioConfig = getLMStudioConfig();
+          const discovery = await listLMStudioModels({ config: lmStudioConfig, timeoutMs: 5_000 });
+          endpoint = discovery.baseUrl;
+          configuredModel = discovery.configuredModel;
+          configuredModelAvailable = discovery.configuredModelAvailable;
+          availableModels = discovery.models.map((model) => model.id);
+          const serverReady = discovery.status === "available";
+          const configuredModelReady = !configuredModel || configuredModelAvailable;
+          status = status === "available" && serverReady && configuredModelReady ? "available" : "unavailable";
+          authStatus = serverReady ? "available" : "unavailable";
+          errorMessage = discovery.errorMessage;
+          if (serverReady && configuredModel && !configuredModelAvailable) {
+            errorMessage = `Configured LM Studio model is not available: ${configuredModel}`;
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          configuredModel = process.env.LMSTUDIO_MODEL?.trim() || undefined;
+          configuredModelAvailable = false;
+          status = "unavailable";
+          authStatus = "unavailable";
+          errorMessage = `Invalid LM Studio configuration: ${message.slice(0, 500)}`;
+        }
+      }
     }
 
     agents.push({
@@ -62,7 +100,12 @@ export async function createDoctorReport(options: DoctorOptions): Promise<Doctor
       version,
       authStatus,
       dryRunSupported: "not_checked",
-      authHint: adapter.authHint
+      authHint: adapter.authHint,
+      endpoint,
+      configuredModel,
+      configuredModelAvailable,
+      availableModels,
+      errorMessage
     });
   }
 

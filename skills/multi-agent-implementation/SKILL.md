@@ -1,6 +1,6 @@
 ---
 name: multi-agent-implementation
-description: Use with multi-agent-orchestration for feature work, bug fixes, refactors, or implementation planning that benefits from external Claude, Copilot, or Antigravity input.
+description: Use with multi-agent-orchestration for feature work, bug fixes, refactors, or implementation planning that benefits from OpenAI Codex, Claude, Copilot, or Antigravity input.
 ---
 
 # Multi-Agent Implementation Preset
@@ -17,6 +17,7 @@ Create an implementation brief with:
 - Required behavior.
 - Non-goals.
 - Test expectations.
+- Requested model map when the user specified provider models for cost, latency, or capability control.
 - Whether the external agent may propose a patch or must stay read-only.
 
 Prefer patch proposals over direct writes. Direct writes require a git worktree or temporary copy.

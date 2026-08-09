@@ -15,6 +15,7 @@ Create a review brief with:
 - Base branch or diff source when known.
 - Files or modules to inspect.
 - Review priorities: correctness, security, data loss, regressions, tests, maintainability.
+- Requested model map when the user specified provider models for cost, latency, or capability control.
 - Output format with severity, file reference, evidence, and suggested fix.
 
 ## Result Requirements
