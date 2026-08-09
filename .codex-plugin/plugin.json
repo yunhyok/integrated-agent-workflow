@@ -1,0 +1,22 @@
+{
+  "name": "integrated-agent-workflow",
+  "version": "0.5.0",
+  "description": "Coordinate OpenAI Codex, LM Studio, Claude, Copilot, and Antigravity agents from Codex.",
+  "author": {
+    "name": "Integrated Agent Workflow Maintainers"
+  },
+  "interface": {
+    "displayName": "Integrated Agent Workflow v0.5.0",
+    "shortDescription": "Coordinate OpenAI and external coding agents from Codex.",
+    "longDescription": "Coordinate OpenAI Codex CLI, a configured LM Studio Responses server, Claude Code, GitHub Copilot CLI, and Google Antigravity CLI through a local MCP server while Codex remains the orchestrator and verifier.",
+    "developerName": "Integrated Agent Workflow Maintainers",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Write"],
+    "defaultPrompt": [
+      "Run a multi-agent review of this change.",
+      "Coordinate external agents for this implementation."
+    ]
+  },
+  "skills": "./skills",
+  "mcpServers": "./.mcp.json"
+}

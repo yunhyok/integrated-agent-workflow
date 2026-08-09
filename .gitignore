@@ -1,1 +1,6 @@
 .worktrees/
+node_modules/
+dist/
+**/.codex/multi-agent/cache/
+**/.codex/multi-agent/runs/
+npm-debug.log*
