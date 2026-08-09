@@ -93,7 +93,7 @@ def _validate_lm_studio_transport(
 
 
 SERVER_ROOT = Path(__file__).resolve().parent
-ROUTER_VERSION = "0.6.0"
+ROUTER_VERSION = "0.6.1"
 DEFAULT_TIMEOUT_SEC = int(os.environ.get("MULTI_AGENT_TIMEOUT_SEC", "300"))
 DEFAULT_MAX_CHARS = int(os.environ.get("MULTI_AGENT_MAX_CHARS", "20000"))
 DEFAULT_MAX_FILE_CHARS = int(os.environ.get("MULTI_AGENT_MAX_FILE_CHARS", "60000"))

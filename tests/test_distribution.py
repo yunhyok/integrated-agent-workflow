@@ -20,10 +20,10 @@ class DistributionContractTests(unittest.TestCase):
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
         self.assertEqual(manifest["name"], "integrated-agent-workflow")
-        self.assertEqual(manifest["version"], "0.6.0")
+        self.assertEqual(manifest["version"], "0.6.1")
         self.assertEqual(
             manifest["interface"]["displayName"],
-            "Integrated Agent Workflow v0.6.0",
+            "Integrated Agent Workflow v0.6.1",
         )
         self.assertRegex(manifest["version"], SEMVER_RE)
         self.assertEqual(manifest["skills"], "./skills/")
@@ -132,8 +132,9 @@ class DistributionContractTests(unittest.TestCase):
 
     def test_readme_documents_version_and_clean_v05_skill_migration(self) -> None:
         readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertTrue(readme.startswith("# Integrated Agent Workflow v0.6.0\n"))
+        self.assertTrue(readme.startswith("# Integrated Agent Workflow v0.6.1\n"))
         self.assertIn("`claude-opus-5`", readme)
+        self.assertIn("`loaded_instances[].id`", readme)
         self.assertIn("-EnableUnconfinedCopilotReviewer", readme)
         self.assertIn("MULTI_AGENT_ENABLE_UNCONFINED_COPILOT_REVIEWER", readme)
         self.assertIn("do not overlay", readme)
