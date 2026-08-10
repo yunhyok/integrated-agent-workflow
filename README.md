@@ -1,4 +1,4 @@
-# Integrated Agent Workflow v0.6.1
+# Integrated Agent Workflow v0.6.2
 
 A Windows-first Codex skill and hardened local MCP router for coordinated,
 model-aware implementation and review. Codex native sub-agents handle ordinary
@@ -260,10 +260,10 @@ References:
 - [LM Studio: serve on a local network](https://lmstudio.ai/docs/developer/core/server/serve-on-network)
 - [LM Studio authentication](https://lmstudio.ai/docs/developer/core/authentication)
 
-## Integrated Agent Flow skill and GPT-5.6 Luna
+## Integrated Agent Flow skill
 
 The distributable skill is under `skills/integrated-agent-flow`. Plugin-managed
-installs should activate the complete v0.6.1 plugin rather than copy the skill
+installs should activate the complete v0.6.2 plugin rather than copy the skill
 separately. For a manual local skill install, archive the previous copy and the
 three v0.5 skill folders outside the active skills directory, then install a
 clean copy:
@@ -303,29 +303,34 @@ Copy-Item -LiteralPath '.\skills\integrated-agent-flow' `
 
 The archive is recoverable under `~/.codex/skill-backups`. Do not leave the old
 three folders under `~/.codex/skills`: their overlapping auto-trigger metadata
-can activate alongside v0.6.1. Fully restart Codex after changing active skills.
+can activate alongside v0.6.2. Fully restart Codex after changing active skills.
 
-Some Codex catalogs currently advertise `gpt-5.6-luna` as a v1 child model,
-which makes `spawn_agent` reject it even though the model itself is available.
-This repository includes an explicit local compatibility workaround:
+### Native child model routing
 
-```powershell
-.\skills\integrated-agent-flow\scripts\Enable-LunaV2.ps1
-```
+Normal project work treats the active `spawn_agent` schema and its runtime
+response as the authority for native Codex child models. The skill passes an
+exact user-selected model unchanged and attempts one native spawn. A rejected
+user-selected model blocks only the work that truly depends on that child; a
+coordinator-selected model may receive one fallback attempt. Repository
+grounding and unrelated coordinator work continue either way.
 
-The script requires Codex CLI 0.147.0+, leaves `models_cache.json` untouched,
-backs up existing configuration, generates `models-luna-v2.json` from the
-current PC's cache, changes only Luna's `multi_agent_version` to `v2`, writes
-`model_catalog_json` at TOML top level, and verifies both strict configuration
-and the effective catalog. Fully restart Codex afterward. Rerun the script
-after a Codex/model-catalog update to refresh the override from the latest
-cache. Never commit either generated catalog or personal `config.toml`.
+The normal path never calls a separate `codex debug models`, inspects or rewrites
+personal Codex configuration or model catalogs, scans Codex binaries, or asks for
+a restart merely to prove native model availability. `doctor` and
+`list_lmstudio_models` remain lazy checks used immediately before an external CLI
+or LM Studio assignment, not before native Codex delegation. This follows the
+[official Codex subagent model-resolution contract](https://learn.chatgpt.com/docs/agent-configuration/subagents).
 
-`model_catalog_json` is a documented startup option, but the Luna field change
-is a local workaround rather than a public API guarantee. Remove the top-level
-setting or restore the timestamped backup to disable it. See the
-[Codex configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference)
-and [GPT-5.6 Luna model page](https://developers.openai.com/api/docs/models/gpt-5.6-luna).
+### Optional legacy Luna catalog repair
+
+`skills/integrated-agent-flow/scripts/Enable-LunaV2.ps1` remains available only
+as a manually invoked legacy maintenance utility for an administrator who
+explicitly asks to diagnose and repair an outdated standalone Codex CLI catalog.
+It is not an installation prerequisite and the skill never runs or recommends it
+during ordinary project execution. The script requires Codex CLI 0.147.0 or
+newer, preserves the source cache, creates backups, writes a separate opt-in
+catalog, validates strict configuration, and requires a full restart afterward.
+Existing personal overrides are not changed by a v0.6.2 plugin upgrade.
 
 ## Review context and privacy
 
@@ -462,10 +467,10 @@ mode refreshes its private environment and protected machine-local JSON without
 creating or changing a global MCP registration.
 
 If the skill was copied manually, rerun the clean-copy migration in
-**Integrated Agent Flow skill and GPT-5.6 Luna**. If Codex loads the repository
-as a plugin, activate the complete v0.6.1 bundle and verify that
+**Integrated Agent Flow skill**. If Codex loads the repository
+as a plugin, activate the complete v0.6.2 bundle and verify that
 `integrated-agent-flow` is the only skill exposed by this plugin; do not overlay
-the v0.6.1 files onto an active v0.5.0 cache directory.
+the v0.6.2 files onto an active v0.5.0 cache directory.
 
 ## Uninstall
 
