@@ -1476,7 +1476,7 @@ class StructuredApiTests(unittest.TestCase):
         self.assertNotIn("executable", rendered.lower())
         payload = json.loads(rendered)
         self.assertEqual(payload["status"], "ok")
-        self.assertEqual(payload["routerVersion"], "0.6.1")
+        self.assertEqual(payload["routerVersion"], "0.6.2")
         self.assertIn("copilotReviewerEnabled", payload["security"])
 
     def test_status_reports_router_version_and_copilot_policy_gate(self):
@@ -1493,7 +1493,7 @@ class StructuredApiTests(unittest.TestCase):
             ),
         ):
             rendered = router.get_agent_status()
-        self.assertIn("Integrated Agent Workflow Router v0.6.1", rendered)
+        self.assertIn("Integrated Agent Workflow Router v0.6.2", rendered)
         self.assertIn("| Copilot | disabled by policy |", rendered)
 
     def test_doctor_agent_records_do_not_probe_disabled_copilot(self):

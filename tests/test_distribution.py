@@ -20,10 +20,10 @@ class DistributionContractTests(unittest.TestCase):
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
         self.assertEqual(manifest["name"], "integrated-agent-workflow")
-        self.assertEqual(manifest["version"], "0.6.1")
+        self.assertEqual(manifest["version"], "0.6.2")
         self.assertEqual(
             manifest["interface"]["displayName"],
-            "Integrated Agent Workflow v0.6.1",
+            "Integrated Agent Workflow v0.6.2",
         )
         self.assertRegex(manifest["version"], SEMVER_RE)
         self.assertEqual(manifest["skills"], "./skills/")
@@ -98,6 +98,20 @@ class DistributionContractTests(unittest.TestCase):
         self.assertIn("`claude-opus-5`", skill_text)
         self.assertIn("Never use the `opus` alias", skill_text)
         self.assertIn("Do not claim that a skill can inspect or switch", skill_text)
+        self.assertIn(
+            "active `spawn_agent` tool schema and its runtime response",
+            skill_text,
+        )
+        self.assertIn("attempt one native spawn", skill_text)
+        self.assertIn("load exactly one corresponding purpose reference", skill_text)
+        self.assertIn("General assignments load neither reference", skill_text)
+        self.assertIn("no environment forensics during project work", skill_text)
+        self.assertIn("Target checkout: <absolute path>", skill_text)
+        self.assertIn("do not work in an initial wrapper directory", skill_text)
+        self.assertIn("ask the user to select an alternative", skill_text)
+        self.assertNotIn("first require a fresh `codex debug models`", skill_text)
+        self.assertNotIn("multi_agent_version", skill_text)
+        self.assertNotIn("Enable-LunaV2.ps1", skill_text)
         self.assertNotIn("mcp__multi_agent", skill_text)
         self.assertNotIn("calling GPT-5.6 Sol Codex session", skill_text)
         self.assertNotIn("continue under GPT-5.6 Sol", skill_text)
@@ -132,7 +146,7 @@ class DistributionContractTests(unittest.TestCase):
 
     def test_readme_documents_version_and_clean_v05_skill_migration(self) -> None:
         readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertTrue(readme.startswith("# Integrated Agent Workflow v0.6.1\n"))
+        self.assertTrue(readme.startswith("# Integrated Agent Workflow v0.6.2\n"))
         self.assertIn("`claude-opus-5`", readme)
         self.assertIn("`loaded_instances[].id`", readme)
         self.assertIn("-EnableUnconfinedCopilotReviewer", readme)
@@ -146,8 +160,16 @@ class DistributionContractTests(unittest.TestCase):
             with self.subTest(legacy_skill=legacy_skill):
                 self.assertIn(legacy_skill, readme)
 
-    def test_ci_runs_luna_behavior_smoke(self) -> None:
+    def test_legacy_luna_repair_stays_optional_and_is_still_smoke_tested(self) -> None:
+        readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+        skill_text = (
+            REPO_ROOT / "skills" / "integrated-agent-flow" / "SKILL.md"
+        ).read_text(encoding="utf-8")
         ci_script = (REPO_ROOT / "tests" / "ci.ps1").read_text(encoding="utf-8")
+
+        self.assertIn("Optional legacy Luna catalog repair", readme)
+        self.assertIn("It is not an installation prerequisite", readme)
+        self.assertNotIn("Enable-LunaV2.ps1", skill_text)
         self.assertIn("tests\\luna_v2_smoke.ps1", ci_script)
 
     def test_installer_router_timeout_matches_runtime_limit(self) -> None:
