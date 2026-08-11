@@ -1,0 +1,113 @@
+{
+  "ownershipMarker": "Owned by Markdown HTML Companion v0.1.0",
+  "schemaVersion": 1,
+  "generator": {
+    "name": "Markdown HTML Companion",
+    "version": "0.1.0"
+  },
+  "generatedAt": "2026-08-11T01:59:12.142590+00:00",
+  "repository": "yunhyok/integrated-agent-workflow",
+  "baseBranch": "master",
+  "baseSha": "b1fb13f8f9484f703f9be1da74d961d49b07ebe5",
+  "branch": "codex/add-html-companions-20260811",
+  "sourceMarkdownCount": 4,
+  "generatedHtmlCount": 4,
+  "documents": [
+    {
+      "source": "README.md",
+      "sourceBlobSha": "ada9e86fcaa9e9072c629804adf6bf2d67876210",
+      "sourceSha256": "f80654b032b7ba474dfa1bf76bcf272cf2790a47040fc2726138c13fc9a98905",
+      "output": "README.companion.html",
+      "outputSha256": "6d2d418af9d682006cf52f210a6c095f5979d3f663a15c2647b5bdd490d45986",
+      "headingCount": 19,
+      "visualClassification": "ARCHITECTURE",
+      "visualTitle": "Integrated Agent Workflow runtime",
+      "diagramAdded": true,
+      "evidence": [
+        {
+          "lineStart": 15,
+          "lineEnd": 26,
+          "summary": "One skill, MCP launcher, private Python runtime, and single security policy are described."
+        },
+        {
+          "lineStart": 28,
+          "lineEnd": 54,
+          "summary": "Tool roles, evidence fields, and read-only/patch-proposal write policy are explicit."
+        }
+      ],
+      "urlCount": 26
+    },
+    {
+      "source": "skills/integrated-agent-flow/SKILL.md",
+      "sourceBlobSha": "87ed87ac6e01a04edf155fa9593fcd996d937347",
+      "sourceSha256": "4e711e43591637e6dbe631528d0f8ca5cc20702e402798255f39c2cf1b67bbc3",
+      "output": "skills/integrated-agent-flow/SKILL.companion.html",
+      "outputSha256": "30ab0feac4325eb3125e2e10b16e83933027a18c07fd6017287fe5454fc2db53",
+      "headingCount": 11,
+      "visualClassification": "PROCESS_FLOW",
+      "visualTitle": "Review and implementation orchestration loop",
+      "diagramAdded": true,
+      "evidence": [
+        {
+          "lineStart": 80,
+          "lineEnd": 92,
+          "summary": "Workflow steps order checkout resolution, classification, delegation, supervision, critical review, integration, validation, and reporting."
+        },
+        {
+          "lineStart": 96,
+          "lineEnd": 113,
+          "summary": "Read-only and writable prompt templates define the handoff fields."
+        }
+      ],
+      "urlCount": 14
+    },
+    {
+      "source": "skills/integrated-agent-flow/references/implementation.md",
+      "sourceBlobSha": "85fb3bf9cffb4157ba1cda02ad9a596331cfabcf",
+      "sourceSha256": "54f9a6c2675ddbe62125825caff9495ffe2fd6eb753eeed240accf76483de3a9",
+      "output": "skills/integrated-agent-flow/references/implementation.companion.html",
+      "outputSha256": "8f2c3202f810f53822212873a5f5b0293a5904bbb0b181fb1be5b43fa9140420",
+      "headingCount": 3,
+      "visualClassification": "NONE",
+      "visualTitle": "Implementation brief template",
+      "diagramAdded": false,
+      "evidence": [
+        {
+          "lineStart": 5,
+          "lineEnd": 18,
+          "summary": "Required brief fields and read-only policy are listed."
+        },
+        {
+          "lineStart": 20,
+          "lineEnd": 32,
+          "summary": "Required result and runtime evidence fields are listed."
+        }
+      ],
+      "urlCount": 4
+    },
+    {
+      "source": "skills/integrated-agent-flow/references/review.md",
+      "sourceBlobSha": "fe2542364d440d2acc599f871401fca5c7338fd9",
+      "sourceSha256": "c7ddef75edcfcff9dafaad34d95b6b50540396dd500479b477c8dbdac4b90c11",
+      "output": "skills/integrated-agent-flow/references/review.companion.html",
+      "outputSha256": "c334f1d332c79d7ee89107a21cbb681eda35c68f8051f7790a3d1dd52dde7541",
+      "headingCount": 3,
+      "visualClassification": "NONE",
+      "visualTitle": "Review brief template",
+      "diagramAdded": false,
+      "evidence": [
+        {
+          "lineStart": 5,
+          "lineEnd": 15,
+          "summary": "Review scope, priorities, evidence, and output fields are listed."
+        },
+        {
+          "lineStart": 17,
+          "lineEnd": 36,
+          "summary": "Severity scale and reporting rules are defined."
+        }
+      ],
+      "urlCount": 4
+    }
+  ]
+}
