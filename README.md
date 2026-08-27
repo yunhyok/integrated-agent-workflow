@@ -1,4 +1,4 @@
-# Integrated Agent Workflow v0.6.2
+# Integrated Agent Workflow v0.6.3
 
 A Windows-first Codex skill and hardened local MCP router for coordinated,
 model-aware implementation and review. Codex native sub-agents handle ordinary
@@ -263,7 +263,7 @@ References:
 ## Integrated Agent Flow skill
 
 The distributable skill is under `skills/integrated-agent-flow`. Plugin-managed
-installs should activate the complete v0.6.2 plugin rather than copy the skill
+installs should activate the complete v0.6.3 plugin rather than copy the skill
 separately. For a manual local skill install, archive the previous copy and the
 three v0.5 skill folders outside the active skills directory, then install a
 clean copy:
@@ -303,7 +303,7 @@ Copy-Item -LiteralPath '.\skills\integrated-agent-flow' `
 
 The archive is recoverable under `~/.codex/skill-backups`. Do not leave the old
 three folders under `~/.codex/skills`: their overlapping auto-trigger metadata
-can activate alongside v0.6.2. Fully restart Codex after changing active skills.
+can activate alongside v0.6.3. Fully restart Codex after changing active skills.
 
 ### Native child model routing
 
@@ -313,6 +313,13 @@ exact user-selected model unchanged and attempts one native spawn. A rejected
 user-selected model blocks only the work that truly depends on that child; a
 coordinator-selected model may receive one fallback attempt. Repository
 grounding and unrelated coordinator work continue either way.
+
+For small, focused, latency-sensitive native child work, the skill may select
+`gpt-5.3-codex-spark` when that exact ID is exposed by the active `spawn_agent`
+schema. Codex-Spark is a separate fast, less-capable model with its own usage
+limits, not fast mode, so demanding multi-file work and final validation stay on
+a more capable model. Exact user-selected models still take precedence. See the
+[official Codex-Spark guidance](https://learn.chatgpt.com/docs/agent-configuration/speed#codex-spark).
 
 The normal path never calls a separate `codex debug models`, inspects or rewrites
 personal Codex configuration or model catalogs, scans Codex binaries, or asks for
@@ -330,7 +337,7 @@ It is not an installation prerequisite and the skill never runs or recommends it
 during ordinary project execution. The script requires Codex CLI 0.147.0 or
 newer, preserves the source cache, creates backups, writes a separate opt-in
 catalog, validates strict configuration, and requires a full restart afterward.
-Existing personal overrides are not changed by a v0.6.2 plugin upgrade.
+Existing personal overrides are not changed by a v0.6.3 plugin upgrade.
 
 ## Review context and privacy
 
@@ -468,9 +475,9 @@ creating or changing a global MCP registration.
 
 If the skill was copied manually, rerun the clean-copy migration in
 **Integrated Agent Flow skill**. If Codex loads the repository
-as a plugin, activate the complete v0.6.2 bundle and verify that
+as a plugin, activate the complete v0.6.3 bundle and verify that
 `integrated-agent-flow` is the only skill exposed by this plugin; do not overlay
-the v0.6.2 files onto an active v0.5.0 cache directory.
+the v0.6.3 files onto an active v0.5.0 cache directory.
 
 ## Uninstall
 
