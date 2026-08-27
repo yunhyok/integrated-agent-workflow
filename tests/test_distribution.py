@@ -20,16 +20,20 @@ class DistributionContractTests(unittest.TestCase):
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
         self.assertEqual(manifest["name"], "integrated-agent-workflow")
-        self.assertEqual(manifest["version"], "0.6.2")
+        self.assertEqual(manifest["version"], "0.6.3")
         self.assertEqual(
             manifest["interface"]["displayName"],
-            "Integrated Agent Workflow v0.6.2",
+            "Integrated Agent Workflow v0.6.3",
         )
         self.assertRegex(manifest["version"], SEMVER_RE)
         self.assertEqual(manifest["skills"], "./skills/")
         self.assertEqual(manifest["mcpServers"], "./.mcp.json")
         self.assertNotIn("Write", manifest["interface"]["capabilities"])
         self.assertNotIn("license", manifest)
+        self.assertIn(
+            "Use gpt-5.3-codex-spark for a focused fast subtask.",
+            manifest["interface"]["defaultPrompt"],
+        )
 
         required = (
             ".mcp.json",
@@ -96,6 +100,7 @@ class DistributionContractTests(unittest.TestCase):
         self.assertLessEqual(len(skill_text.splitlines()), 500)
 
         self.assertIn("`claude-opus-5`", skill_text)
+        self.assertIn("`gpt-5.3-codex-spark`", skill_text)
         self.assertIn("Never use the `opus` alias", skill_text)
         self.assertIn("Do not claim that a skill can inspect or switch", skill_text)
         self.assertIn(
@@ -146,7 +151,8 @@ class DistributionContractTests(unittest.TestCase):
 
     def test_readme_documents_version_and_clean_v05_skill_migration(self) -> None:
         readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertTrue(readme.startswith("# Integrated Agent Workflow v0.6.2\n"))
+        self.assertTrue(readme.startswith("# Integrated Agent Workflow v0.6.3\n"))
+        self.assertIn("`gpt-5.3-codex-spark`", readme)
         self.assertIn("`claude-opus-5`", readme)
         self.assertIn("`loaded_instances[].id`", readme)
         self.assertIn("-EnableUnconfinedCopilotReviewer", readme)
