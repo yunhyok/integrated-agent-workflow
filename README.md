@@ -1,4 +1,4 @@
-# Integrated Agent Workflow v0.6.3
+# Integrated Agent Workflow v0.6.4
 
 A Windows-first Codex skill and hardened local MCP router for coordinated,
 model-aware implementation and review. Codex native sub-agents handle ordinary
@@ -263,7 +263,7 @@ References:
 ## Integrated Agent Flow skill
 
 The distributable skill is under `skills/integrated-agent-flow`. Plugin-managed
-installs should activate the complete v0.6.3 plugin rather than copy the skill
+installs should activate the complete v0.6.4 plugin rather than copy the skill
 separately. For a manual local skill install, archive the previous copy and the
 three v0.5 skill folders outside the active skills directory, then install a
 clean copy:
@@ -303,7 +303,7 @@ Copy-Item -LiteralPath '.\skills\integrated-agent-flow' `
 
 The archive is recoverable under `~/.codex/skill-backups`. Do not leave the old
 three folders under `~/.codex/skills`: their overlapping auto-trigger metadata
-can activate alongside v0.6.3. Fully restart Codex after changing active skills.
+can activate alongside v0.6.4. Fully restart Codex after changing active skills.
 
 ### Native child model routing
 
@@ -313,6 +313,13 @@ exact user-selected model unchanged and attempts one native spawn. A rejected
 user-selected model blocks only the work that truly depends on that child; a
 coordinator-selected model may receive one fallback attempt. Repository
 grounding and unrelated coordinator work continue either way.
+
+Unless the user selects a reasoning effort, the skill explicitly passes the
+highest level advertised for the chosen native model: `ultra`, then `max`,
+`xhigh`, `high`, `medium`, or `low`. It never applies an unsupported global
+effort to a different model. A supported explicit user choice still wins.
+Model or effort overrides use a self-contained non-full-history fork because a
+full-history fork intentionally inherits the parent model and effort.
 
 For small, focused, latency-sensitive native child work, the skill may select
 `gpt-5.3-codex-spark` when that exact ID is exposed by the active `spawn_agent`
@@ -337,7 +344,7 @@ It is not an installation prerequisite and the skill never runs or recommends it
 during ordinary project execution. The script requires Codex CLI 0.147.0 or
 newer, preserves the source cache, creates backups, writes a separate opt-in
 catalog, validates strict configuration, and requires a full restart afterward.
-Existing personal overrides are not changed by a v0.6.3 plugin upgrade.
+Existing personal overrides are not changed by a v0.6.4 plugin upgrade.
 
 ## Review context and privacy
 
@@ -475,9 +482,9 @@ creating or changing a global MCP registration.
 
 If the skill was copied manually, rerun the clean-copy migration in
 **Integrated Agent Flow skill**. If Codex loads the repository
-as a plugin, activate the complete v0.6.3 bundle and verify that
+as a plugin, activate the complete v0.6.4 bundle and verify that
 `integrated-agent-flow` is the only skill exposed by this plugin; do not overlay
-the v0.6.3 files onto an active v0.5.0 cache directory.
+the v0.6.4 files onto an active v0.5.0 cache directory.
 
 ## Uninstall
 
