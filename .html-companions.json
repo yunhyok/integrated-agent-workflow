@@ -5,20 +5,20 @@
     "name": "Markdown HTML Companion",
     "version": "0.1.0"
   },
-  "generatedAt": "2026-08-27T01:31:01.5269036+00:00",
+  "generatedAt": "2026-09-04T00:14:03.867507+00:00",
   "repository": "yunhyok/integrated-agent-workflow",
   "baseBranch": "master",
-  "baseSha": "fdf94724f2dca5f7a1bef6edda946825d5deb636",
-  "branch": "codex/refresh-spark-html-companions-v0.6.3",
+  "baseSha": "6b0b57471aebd65f14299c715d6c02734edd1667",
+  "branch": "codex/default-max-native-reasoning-v0.6.4",
   "sourceMarkdownCount": 4,
   "generatedHtmlCount": 4,
   "documents": [
     {
       "source": "README.md",
-      "sourceBlobSha": "0ebc2624e54a7df1c9be5634c70b184987e4da1f",
-      "sourceSha256": "cc7682c98ae18cea217e8eb7e9b490ff669d2756052a4f717243e0b734cfdd19",
+      "sourceBlobSha": "383e8f5cf224e1a823d3a8312a63157f8b583594",
+      "sourceSha256": "b34cdae6e1520c97b5461ce04e0cca9cd9e81dfbdb48d50dd29b3ed27a48fc55",
       "output": "README.companion.html",
-      "outputSha256": "19f4ae6af9a8a9a07490696f9e3189be411b35bb3cb8ef653f6b0a25d418dcce",
+      "outputSha256": "de61ad9555e2e23c373b4785157865f409a4bbdd1b5deca0c1dd175d2704fb03",
       "headingCount": 19,
       "visualClassification": "ARCHITECTURE",
       "visualTitle": "Integrated Agent Workflow runtime",
@@ -39,23 +39,23 @@
     },
     {
       "source": "skills/integrated-agent-flow/SKILL.md",
-      "sourceBlobSha": "26a729f31af5085100be9bd53f4b5c8de9cf03de",
-      "sourceSha256": "425480d22c18f094f8ace1b7038340e75f32f1aa1d6915a4d22d2f8d123b2859",
+      "sourceBlobSha": "a96ee33432566e53a8887062d59fb7ad7ccd9db7",
+      "sourceSha256": "0feed176b3192bc19bbe452104b26ad53a3dd1c4181b2ac586830b6b7cb7305d",
       "output": "skills/integrated-agent-flow/SKILL.companion.html",
-      "outputSha256": "2493d5a714057410b8e8b56fb64704e59a1379a5c137f7288fe126f35b8f1b5c",
+      "outputSha256": "f810cd78bda62ae001952569c44632d10363924506b159ffd0cdb473525e5c70",
       "headingCount": 11,
       "visualClassification": "PROCESS_FLOW",
       "visualTitle": "Review and implementation orchestration loop",
       "diagramAdded": true,
       "evidence": [
         {
-          "lineStart": 82,
-          "lineEnd": 94,
+          "lineStart": 86,
+          "lineEnd": 98,
           "summary": "Workflow steps order checkout resolution, classification, delegation, supervision, critical review, integration, validation, and reporting."
         },
         {
-          "lineStart": 98,
-          "lineEnd": 115,
+          "lineStart": 102,
+          "lineEnd": 119,
           "summary": "Read-only and writable prompt templates define the handoff fields."
         }
       ],
