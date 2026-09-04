@@ -20,10 +20,10 @@ class DistributionContractTests(unittest.TestCase):
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
         self.assertEqual(manifest["name"], "integrated-agent-workflow")
-        self.assertEqual(manifest["version"], "0.6.3")
+        self.assertEqual(manifest["version"], "0.6.4")
         self.assertEqual(
             manifest["interface"]["displayName"],
-            "Integrated Agent Workflow v0.6.3",
+            "Integrated Agent Workflow v0.6.4",
         )
         self.assertRegex(manifest["version"], SEMVER_RE)
         self.assertEqual(manifest["skills"], "./skills/")
@@ -108,6 +108,22 @@ class DistributionContractTests(unittest.TestCase):
             skill_text,
         )
         self.assertIn("attempt one native spawn", skill_text)
+        self.assertIn("highest effort advertised", skill_text)
+        self.assertIn(
+            "Prefer `ultra`, then `max`, `xhigh`, `high`, `medium`, and `low`",
+            skill_text,
+        )
+        self.assertIn(
+            "never pass a level that the selected model does not advertise",
+            skill_text,
+        )
+        self.assertIn("A supported user-selected effort takes precedence", skill_text)
+        self.assertIn(
+            "pass the selected model and resolved reasoning effort explicitly",
+            skill_text,
+        )
+        self.assertIn("without silently lowering it", skill_text)
+        self.assertIn("A full-history fork inherits", skill_text)
         self.assertIn("load exactly one corresponding purpose reference", skill_text)
         self.assertIn("General assignments load neither reference", skill_text)
         self.assertIn("no environment forensics during project work", skill_text)
@@ -151,7 +167,9 @@ class DistributionContractTests(unittest.TestCase):
 
     def test_readme_documents_version_and_clean_v05_skill_migration(self) -> None:
         readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertTrue(readme.startswith("# Integrated Agent Workflow v0.6.3\n"))
+        self.assertTrue(readme.startswith("# Integrated Agent Workflow v0.6.4\n"))
+        self.assertIn("highest level advertised", readme)
+        self.assertIn("self-contained non-full-history fork", readme)
         self.assertIn("`gpt-5.3-codex-spark`", readme)
         self.assertIn("`claude-opus-5`", readme)
         self.assertIn("`loaded_instances[].id`", readme)
