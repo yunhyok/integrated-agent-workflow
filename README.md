@@ -1,4 +1,4 @@
-# Integrated Agent Workflow v0.6.4
+# Integrated Agent Workflow v0.6.5
 
 A Windows-first Codex skill and hardened local MCP router for coordinated,
 model-aware implementation and review. Codex native sub-agents handle ordinary
@@ -263,7 +263,7 @@ References:
 ## Integrated Agent Flow skill
 
 The distributable skill is under `skills/integrated-agent-flow`. Plugin-managed
-installs should activate the complete v0.6.4 plugin rather than copy the skill
+installs should activate the complete v0.6.5 plugin rather than copy the skill
 separately. For a manual local skill install, archive the previous copy and the
 three v0.5 skill folders outside the active skills directory, then install a
 clean copy:
@@ -303,13 +303,32 @@ Copy-Item -LiteralPath '.\skills\integrated-agent-flow' `
 
 The archive is recoverable under `~/.codex/skill-backups`. Do not leave the old
 three folders under `~/.codex/skills`: their overlapping auto-trigger metadata
-can activate alongside v0.6.4. Fully restart Codex after changing active skills.
+can activate alongside v0.6.5. Fully restart Codex after changing active skills.
 
 ### Native child model routing
 
+An active GPT-6 Astra coordinator can delegate to Astra, Sol, Terra, and Luna;
+child responsibility does not require a less capable model. The skill keeps the
+current coordinator in charge and selects each child independently:
+
+| Native child model | Default task fit |
+| --- | --- |
+| `gpt-6-astra` | Hardest bounded reasoning, architecture, debugging, or independent high-risk review |
+| `gpt-5.6-sol` | Complex implementation or review across multiple files |
+| `gpt-5.6-terra` | Routine implementation, fixes, or review with balanced capability and cost |
+| `gpt-5.6-luna` | Well-specified edits, focused searches, or narrow checks |
+
+These defaults apply only when the active tool advertises the model and the
+user has not chosen one. Choose the smallest model that can reliably satisfy
+the assignment, and use Astra or Sol directly when warranted. The skill does
+not switch the running coordinator or require weaker-model attempts first.
+See the [official OpenAI model descriptions](https://developers.openai.com/api/docs/models).
+
 Normal project work treats the active `spawn_agent` schema and its runtime
-response as the authority for native Codex child models. The skill passes an
-exact user-selected model unchanged and attempts one native spawn. A rejected
+response as the authority for native Codex child models. If the requested
+model or a supported effort is absent from the schema, report the limitation
+without dispatch or substitution. Otherwise pass the exact user-selected model
+unchanged and attempt one native spawn. A rejected
 user-selected model blocks only the work that truly depends on that child; a
 coordinator-selected model may receive one fallback attempt. Repository
 grounding and unrelated coordinator work continue either way.
@@ -344,7 +363,7 @@ It is not an installation prerequisite and the skill never runs or recommends it
 during ordinary project execution. The script requires Codex CLI 0.147.0 or
 newer, preserves the source cache, creates backups, writes a separate opt-in
 catalog, validates strict configuration, and requires a full restart afterward.
-Existing personal overrides are not changed by a v0.6.4 plugin upgrade.
+Existing personal overrides are not changed by a v0.6.5 plugin upgrade.
 
 ## Review context and privacy
 
@@ -482,9 +501,9 @@ creating or changing a global MCP registration.
 
 If the skill was copied manually, rerun the clean-copy migration in
 **Integrated Agent Flow skill**. If Codex loads the repository
-as a plugin, activate the complete v0.6.4 bundle and verify that
+as a plugin, activate the complete v0.6.5 bundle and verify that
 `integrated-agent-flow` is the only skill exposed by this plugin; do not overlay
-the v0.6.4 files onto an active v0.5.0 cache directory.
+the v0.6.5 files onto an active v0.5.0 cache directory.
 
 ## Uninstall
 

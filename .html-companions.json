@@ -5,20 +5,20 @@
     "name": "Markdown HTML Companion",
     "version": "0.1.0"
   },
-  "generatedAt": "2026-09-04T00:14:03.867507+00:00",
+  "generatedAt": "2026-09-06T05:43:52.517256+00:00",
   "repository": "yunhyok/integrated-agent-workflow",
   "baseBranch": "master",
-  "baseSha": "6b0b57471aebd65f14299c715d6c02734edd1667",
-  "branch": "codex/default-max-native-reasoning-v0.6.4",
+  "baseSha": "e64a6065b3b7b73825083e328fcfaa748bd8dba8",
+  "branch": "codex/astra-subagent-routing-v0.6.5",
   "sourceMarkdownCount": 4,
   "generatedHtmlCount": 4,
   "documents": [
     {
       "source": "README.md",
-      "sourceBlobSha": "383e8f5cf224e1a823d3a8312a63157f8b583594",
-      "sourceSha256": "b34cdae6e1520c97b5461ce04e0cca9cd9e81dfbdb48d50dd29b3ed27a48fc55",
+      "sourceBlobSha": "b4e110b8162efa82a8ab2263e884d3b2a42a8f3d",
+      "sourceSha256": "55559fad77b895aff896869d43f76913d2df1d407ff9aed7ed6ac48ea816b9f1",
       "output": "README.companion.html",
-      "outputSha256": "de61ad9555e2e23c373b4785157865f409a4bbdd1b5deca0c1dd175d2704fb03",
+      "outputSha256": "0ef15a25920bf1901c783be46cb16072ca6ab84214d79a76a32dedad455af13c",
       "headingCount": 19,
       "visualClassification": "ARCHITECTURE",
       "visualTitle": "Integrated Agent Workflow runtime",
@@ -35,27 +35,27 @@
           "summary": "Tool roles, evidence fields, and read-only/patch-proposal write policy are explicit."
         }
       ],
-      "urlCount": 27
+      "urlCount": 28
     },
     {
       "source": "skills/integrated-agent-flow/SKILL.md",
-      "sourceBlobSha": "a96ee33432566e53a8887062d59fb7ad7ccd9db7",
-      "sourceSha256": "0feed176b3192bc19bbe452104b26ad53a3dd1c4181b2ac586830b6b7cb7305d",
+      "sourceBlobSha": "71065aab8ee675de24610f841491d926fde4322e",
+      "sourceSha256": "1fd42912677738e78d62cd01b2ebc920ed7f9e9b2e435bb46041b450ac893496",
       "output": "skills/integrated-agent-flow/SKILL.companion.html",
-      "outputSha256": "f810cd78bda62ae001952569c44632d10363924506b159ffd0cdb473525e5c70",
+      "outputSha256": "a20fc5a3f4e5f0e27bee6b575ff9923df469d05bc0395b160de5ccd92e74940e",
       "headingCount": 11,
       "visualClassification": "PROCESS_FLOW",
       "visualTitle": "Review and implementation orchestration loop",
       "diagramAdded": true,
       "evidence": [
         {
-          "lineStart": 86,
-          "lineEnd": 98,
+          "lineStart": 97,
+          "lineEnd": 110,
           "summary": "Workflow steps order checkout resolution, classification, delegation, supervision, critical review, integration, validation, and reporting."
         },
         {
-          "lineStart": 102,
-          "lineEnd": 119,
+          "lineStart": 111,
+          "lineEnd": 132,
           "summary": "Read-only and writable prompt templates define the handoff fields."
         }
       ],
@@ -64,9 +64,9 @@
     {
       "source": "skills/integrated-agent-flow/references/implementation.md",
       "sourceBlobSha": "85fb3bf9cffb4157ba1cda02ad9a596331cfabcf",
-      "sourceSha256": "54f9a6c2675ddbe62125825caff9495ffe2fd6eb753eeed240accf76483de3a9",
+      "sourceSha256": "ad74a507fd5d3e2ae0a4f137205e78d80a064711a3dd99af33f70882d04ab1c3",
       "output": "skills/integrated-agent-flow/references/implementation.companion.html",
-      "outputSha256": "8f2c3202f810f53822212873a5f5b0293a5904bbb0b181fb1be5b43fa9140420",
+      "outputSha256": "798368481278f3825193a9b7fc19f592d85a106cf977e744914cd6402244e6c2",
       "headingCount": 3,
       "visualClassification": "NONE",
       "visualTitle": "Implementation brief template",
@@ -88,9 +88,9 @@
     {
       "source": "skills/integrated-agent-flow/references/review.md",
       "sourceBlobSha": "fe2542364d440d2acc599f871401fca5c7338fd9",
-      "sourceSha256": "c7ddef75edcfcff9dafaad34d95b6b50540396dd500479b477c8dbdac4b90c11",
+      "sourceSha256": "68a6697a8cf7f4eaf7c9b0f8fadb7fc40cb7613e556a0038945e346af87d03a3",
       "output": "skills/integrated-agent-flow/references/review.companion.html",
-      "outputSha256": "c334f1d332c79d7ee89107a21cbb681eda35c68f8051f7790a3d1dd52dde7541",
+      "outputSha256": "c9595da465a0a8b6c75e0df438885aff2d6ce7819c6ffb40e92c1abd87389ed3",
       "headingCount": 3,
       "visualClassification": "NONE",
       "visualTitle": "Review brief template",
