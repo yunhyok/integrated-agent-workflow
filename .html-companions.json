@@ -5,7 +5,7 @@
     "name": "Markdown HTML Companion",
     "version": "0.1.0"
   },
-  "generatedAt": "2026-09-06T05:40:04.390769+00:00",
+  "generatedAt": "2026-09-06T05:43:08.469222+00:00",
   "repository": "yunhyok/integrated-agent-workflow",
   "baseBranch": "master",
   "baseSha": "e64a6065b3b7b73825083e328fcfaa748bd8dba8",
@@ -16,9 +16,9 @@
     {
       "source": "README.md",
       "sourceBlobSha": "b4e110b8162efa82a8ab2263e884d3b2a42a8f3d",
-      "sourceSha256": "2bf767622a42f55a9d4ff26c4e4d55ddec35ac2becd3789075820ecde4ef3c54",
+      "sourceSha256": "55559fad77b895aff896869d43f76913d2df1d407ff9aed7ed6ac48ea816b9f1",
       "output": "README.companion.html",
-      "outputSha256": "21af22b1e80ec50a5abee6f118b6956ec35704c9f1d93b22796903b4dcc26800",
+      "outputSha256": "0ef15a25920bf1901c783be46cb16072ca6ab84214d79a76a32dedad455af13c",
       "headingCount": 19,
       "visualClassification": "ARCHITECTURE",
       "visualTitle": "Integrated Agent Workflow runtime",
@@ -40,9 +40,9 @@
     {
       "source": "skills/integrated-agent-flow/SKILL.md",
       "sourceBlobSha": "71065aab8ee675de24610f841491d926fde4322e",
-      "sourceSha256": "ba57bd4ac6e92aebafc55dba2637a1749031581d89fb9a50b65d4045e89c9abf",
+      "sourceSha256": "1fd42912677738e78d62cd01b2ebc920ed7f9e9b2e435bb46041b450ac893496",
       "output": "skills/integrated-agent-flow/SKILL.companion.html",
-      "outputSha256": "4ce0453dcc018e371a47bc0aa955a85ee40925baf26edb6b4cd9dc015efa8c41",
+      "outputSha256": "a20fc5a3f4e5f0e27bee6b575ff9923df469d05bc0395b160de5ccd92e74940e",
       "headingCount": 11,
       "visualClassification": "PROCESS_FLOW",
       "visualTitle": "Review and implementation orchestration loop",
