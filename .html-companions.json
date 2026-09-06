@@ -5,7 +5,7 @@
     "name": "Markdown HTML Companion",
     "version": "0.1.0"
   },
-  "generatedAt": "2026-09-06T05:43:08.469222+00:00",
+  "generatedAt": "2026-09-06T05:43:52.517256+00:00",
   "repository": "yunhyok/integrated-agent-workflow",
   "baseBranch": "master",
   "baseSha": "e64a6065b3b7b73825083e328fcfaa748bd8dba8",
@@ -64,9 +64,9 @@
     {
       "source": "skills/integrated-agent-flow/references/implementation.md",
       "sourceBlobSha": "85fb3bf9cffb4157ba1cda02ad9a596331cfabcf",
-      "sourceSha256": "54f9a6c2675ddbe62125825caff9495ffe2fd6eb753eeed240accf76483de3a9",
+      "sourceSha256": "ad74a507fd5d3e2ae0a4f137205e78d80a064711a3dd99af33f70882d04ab1c3",
       "output": "skills/integrated-agent-flow/references/implementation.companion.html",
-      "outputSha256": "8f2c3202f810f53822212873a5f5b0293a5904bbb0b181fb1be5b43fa9140420",
+      "outputSha256": "798368481278f3825193a9b7fc19f592d85a106cf977e744914cd6402244e6c2",
       "headingCount": 3,
       "visualClassification": "NONE",
       "visualTitle": "Implementation brief template",
@@ -88,9 +88,9 @@
     {
       "source": "skills/integrated-agent-flow/references/review.md",
       "sourceBlobSha": "fe2542364d440d2acc599f871401fca5c7338fd9",
-      "sourceSha256": "c7ddef75edcfcff9dafaad34d95b6b50540396dd500479b477c8dbdac4b90c11",
+      "sourceSha256": "68a6697a8cf7f4eaf7c9b0f8fadb7fc40cb7613e556a0038945e346af87d03a3",
       "output": "skills/integrated-agent-flow/references/review.companion.html",
-      "outputSha256": "c334f1d332c79d7ee89107a21cbb681eda35c68f8051f7790a3d1dd52dde7541",
+      "outputSha256": "c9595da465a0a8b6c75e0df438885aff2d6ce7819c6ffb40e92c1abd87389ed3",
       "headingCount": 3,
       "visualClassification": "NONE",
       "visualTitle": "Review brief template",
