@@ -20,10 +20,10 @@ class DistributionContractTests(unittest.TestCase):
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
         self.assertEqual(manifest["name"], "integrated-agent-workflow")
-        self.assertEqual(manifest["version"], "0.6.4")
+        self.assertEqual(manifest["version"], "0.6.5")
         self.assertEqual(
             manifest["interface"]["displayName"],
-            "Integrated Agent Workflow v0.6.4",
+            "Integrated Agent Workflow v0.6.5",
         )
         self.assertRegex(manifest["version"], SEMVER_RE)
         self.assertEqual(manifest["skills"], "./skills/")
@@ -167,7 +167,7 @@ class DistributionContractTests(unittest.TestCase):
 
     def test_readme_documents_version_and_clean_v05_skill_migration(self) -> None:
         readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertTrue(readme.startswith("# Integrated Agent Workflow v0.6.4\n"))
+        self.assertTrue(readme.startswith("# Integrated Agent Workflow v0.6.5\n"))
         self.assertIn("highest level advertised", readme)
         self.assertIn("self-contained non-full-history fork", readme)
         self.assertIn("`gpt-5.3-codex-spark`", readme)
@@ -183,6 +183,14 @@ class DistributionContractTests(unittest.TestCase):
         ):
             with self.subTest(legacy_skill=legacy_skill):
                 self.assertIn(legacy_skill, readme)
+
+    def test_native_model_ids_match_skill_and_readme(self) -> None:
+        models = ("gpt-6-astra", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna")
+        for relative_path in ("skills/integrated-agent-flow/SKILL.md", "README.md"):
+            text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+            for model in models:
+                with self.subTest(path=relative_path, model=model):
+                    self.assertIn(f"`{model}`", text)
 
     def test_legacy_luna_repair_stays_optional_and_is_still_smoke_tested(self) -> None:
         readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")

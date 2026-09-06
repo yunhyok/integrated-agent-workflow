@@ -5,20 +5,20 @@
     "name": "Markdown HTML Companion",
     "version": "0.1.0"
   },
-  "generatedAt": "2026-09-04T00:14:03.867507+00:00",
+  "generatedAt": "2026-09-06T05:40:04.390769+00:00",
   "repository": "yunhyok/integrated-agent-workflow",
   "baseBranch": "master",
-  "baseSha": "6b0b57471aebd65f14299c715d6c02734edd1667",
-  "branch": "codex/default-max-native-reasoning-v0.6.4",
+  "baseSha": "e64a6065b3b7b73825083e328fcfaa748bd8dba8",
+  "branch": "codex/astra-subagent-routing-v0.6.5",
   "sourceMarkdownCount": 4,
   "generatedHtmlCount": 4,
   "documents": [
     {
       "source": "README.md",
-      "sourceBlobSha": "383e8f5cf224e1a823d3a8312a63157f8b583594",
-      "sourceSha256": "b34cdae6e1520c97b5461ce04e0cca9cd9e81dfbdb48d50dd29b3ed27a48fc55",
+      "sourceBlobSha": "b4e110b8162efa82a8ab2263e884d3b2a42a8f3d",
+      "sourceSha256": "2bf767622a42f55a9d4ff26c4e4d55ddec35ac2becd3789075820ecde4ef3c54",
       "output": "README.companion.html",
-      "outputSha256": "de61ad9555e2e23c373b4785157865f409a4bbdd1b5deca0c1dd175d2704fb03",
+      "outputSha256": "21af22b1e80ec50a5abee6f118b6956ec35704c9f1d93b22796903b4dcc26800",
       "headingCount": 19,
       "visualClassification": "ARCHITECTURE",
       "visualTitle": "Integrated Agent Workflow runtime",
@@ -35,27 +35,27 @@
           "summary": "Tool roles, evidence fields, and read-only/patch-proposal write policy are explicit."
         }
       ],
-      "urlCount": 27
+      "urlCount": 28
     },
     {
       "source": "skills/integrated-agent-flow/SKILL.md",
-      "sourceBlobSha": "a96ee33432566e53a8887062d59fb7ad7ccd9db7",
-      "sourceSha256": "0feed176b3192bc19bbe452104b26ad53a3dd1c4181b2ac586830b6b7cb7305d",
+      "sourceBlobSha": "71065aab8ee675de24610f841491d926fde4322e",
+      "sourceSha256": "ba57bd4ac6e92aebafc55dba2637a1749031581d89fb9a50b65d4045e89c9abf",
       "output": "skills/integrated-agent-flow/SKILL.companion.html",
-      "outputSha256": "f810cd78bda62ae001952569c44632d10363924506b159ffd0cdb473525e5c70",
+      "outputSha256": "4ce0453dcc018e371a47bc0aa955a85ee40925baf26edb6b4cd9dc015efa8c41",
       "headingCount": 11,
       "visualClassification": "PROCESS_FLOW",
       "visualTitle": "Review and implementation orchestration loop",
       "diagramAdded": true,
       "evidence": [
         {
-          "lineStart": 86,
-          "lineEnd": 98,
+          "lineStart": 97,
+          "lineEnd": 110,
           "summary": "Workflow steps order checkout resolution, classification, delegation, supervision, critical review, integration, validation, and reporting."
         },
         {
-          "lineStart": 102,
-          "lineEnd": 119,
+          "lineStart": 111,
+          "lineEnd": 132,
           "summary": "Read-only and writable prompt templates define the handoff fields."
         }
       ],
