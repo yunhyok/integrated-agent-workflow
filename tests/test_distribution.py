@@ -20,10 +20,10 @@ class DistributionContractTests(unittest.TestCase):
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
         self.assertEqual(manifest["name"], "integrated-agent-workflow")
-        self.assertEqual(manifest["version"], "0.6.5")
+        self.assertEqual(manifest["version"], "0.7.0")
         self.assertEqual(
             manifest["interface"]["displayName"],
-            "Integrated Agent Workflow v0.6.5",
+            "Integrated Agent Workflow v0.7.0",
         )
         self.assertRegex(manifest["version"], SEMVER_RE)
         self.assertEqual(manifest["skills"], "./skills/")
@@ -46,6 +46,7 @@ class DistributionContractTests(unittest.TestCase):
             "skills/integrated-agent-flow/agents/openai.yaml",
             "skills/integrated-agent-flow/references/implementation.md",
             "skills/integrated-agent-flow/references/review.md",
+            "skills/integrated-agent-flow/references/multi-chat.md",
             "skills/integrated-agent-flow/scripts/Enable-LunaV2.ps1",
             "tests/luna_v2_smoke.ps1",
         )
@@ -140,7 +141,11 @@ class DistributionContractTests(unittest.TestCase):
         reference_links = set(re.findall(r"\]\((references/[^)]+)\)", skill_text))
         self.assertEqual(
             reference_links,
-            {"references/implementation.md", "references/review.md"},
+            {
+                "references/implementation.md",
+                "references/review.md",
+                "references/multi-chat.md",
+            },
         )
         for relative_reference in reference_links:
             with self.subTest(reference=relative_reference):
@@ -167,7 +172,7 @@ class DistributionContractTests(unittest.TestCase):
 
     def test_readme_documents_version_and_clean_v05_skill_migration(self) -> None:
         readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertTrue(readme.startswith("# Integrated Agent Workflow v0.6.5\n"))
+        self.assertTrue(readme.startswith("# Integrated Agent Workflow v0.7.0\n"))
         self.assertIn("highest level advertised", readme)
         self.assertIn("self-contained non-full-history fork", readme)
         self.assertIn("`gpt-5.3-codex-spark`", readme)

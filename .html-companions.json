@@ -5,61 +5,51 @@
     "name": "Markdown HTML Companion",
     "version": "0.1.0"
   },
-  "generatedAt": "2026-09-06T05:43:52.517256+00:00",
+  "generatedAt": "2026-09-08T12:13:22.526471+00:00",
   "repository": "yunhyok/integrated-agent-workflow",
   "baseBranch": "master",
-  "baseSha": "e64a6065b3b7b73825083e328fcfaa748bd8dba8",
-  "branch": "codex/astra-subagent-routing-v0.6.5",
-  "sourceMarkdownCount": 4,
-  "generatedHtmlCount": 4,
+  "baseSha": "bbb4c448594bf0c691de34bb2f84d743f260b1bd",
+  "branch": "codex/hq-multi-chat-orchestration",
+  "sourceMarkdownCount": 5,
+  "generatedHtmlCount": 5,
   "documents": [
     {
       "source": "README.md",
-      "sourceBlobSha": "b4e110b8162efa82a8ab2263e884d3b2a42a8f3d",
-      "sourceSha256": "55559fad77b895aff896869d43f76913d2df1d407ff9aed7ed6ac48ea816b9f1",
+      "sourceBlobSha": "9d427785c602bfa2464eb0cd7c031eb67f8523ec",
+      "sourceSha256": "3e3e22f528606ef6b7eb5768c7119a0327e5a3e9b1d1bec002a4d23d7bc27c62",
       "output": "README.companion.html",
-      "outputSha256": "0ef15a25920bf1901c783be46cb16072ca6ab84214d79a76a32dedad455af13c",
-      "headingCount": 19,
+      "outputSha256": "329075b5cc230153ccb7599a9146e394a4741b94daabfce54a6cca3e33276a8b",
+      "headingCount": 20,
       "visualClassification": "ARCHITECTURE",
       "visualTitle": "Integrated Agent Workflow runtime",
       "diagramAdded": true,
       "evidence": [
         {
-          "lineStart": 15,
-          "lineEnd": 26,
-          "summary": "One skill, MCP launcher, private Python runtime, and single security policy are described."
-        },
-        {
-          "lineStart": 28,
-          "lineEnd": 54,
-          "summary": "Tool roles, evidence fields, and read-only/patch-proposal write policy are explicit."
+          "lineStart": 309,
+          "lineEnd": 349,
+          "summary": "Defines the execution topology and manager responsibilities under HQ."
         }
       ],
-      "urlCount": 28
+      "urlCount": 31
     },
     {
       "source": "skills/integrated-agent-flow/SKILL.md",
-      "sourceBlobSha": "71065aab8ee675de24610f841491d926fde4322e",
-      "sourceSha256": "1fd42912677738e78d62cd01b2ebc920ed7f9e9b2e435bb46041b450ac893496",
+      "sourceBlobSha": "b4205ef3ea86562acb46661c19ba6d6c3af88838",
+      "sourceSha256": "115015a3099c68f79cab429ee745ae0c63342ae45735c1d71cdbd4af4728339c",
       "output": "skills/integrated-agent-flow/SKILL.companion.html",
-      "outputSha256": "a20fc5a3f4e5f0e27bee6b575ff9923df469d05bc0395b160de5ccd92e74940e",
+      "outputSha256": "ec619c3a67261e9cd29a4da0ae9d3dc6e4b74007258962c2c77b3c0865e7779d",
       "headingCount": 11,
       "visualClassification": "PROCESS_FLOW",
       "visualTitle": "Review and implementation orchestration loop",
       "diagramAdded": true,
       "evidence": [
         {
-          "lineStart": 97,
-          "lineEnd": 110,
-          "summary": "Workflow steps order checkout resolution, classification, delegation, supervision, critical review, integration, validation, and reporting."
-        },
-        {
-          "lineStart": 111,
-          "lineEnd": 132,
-          "summary": "Read-only and writable prompt templates define the handoff fields."
+          "lineStart": 18,
+          "lineEnd": 25,
+          "summary": "Defines the execution topology and manager responsibilities under HQ."
         }
       ],
-      "urlCount": 14
+      "urlCount": 15
     },
     {
       "source": "skills/integrated-agent-flow/references/implementation.md",
@@ -108,6 +98,25 @@
         }
       ],
       "urlCount": 4
+    },
+    {
+      "source": "skills/integrated-agent-flow/references/multi-chat.md",
+      "output": "skills/integrated-agent-flow/references/multi-chat.companion.html",
+      "visualClassification": "ARCHITECTURE",
+      "visualTitle": "HQ, manager chats and native workers",
+      "diagramAdded": true,
+      "sourceBlobSha": "97392b9c1a998d36545ff41017c3f5cb35c6c17e",
+      "sourceSha256": "540a05a393686dff3b0993ef4c6a710bc44e0c01e86a4331841cbae9efbcc8a8",
+      "outputSha256": "31c8d1ef61ee5a95b58b9ebb966f7068bc7f6c950ba0bda83b2a9f8a5f97fcd3",
+      "headingCount": 7,
+      "evidence": [
+        {
+          "lineStart": 5,
+          "lineEnd": 14,
+          "summary": "Defines the execution topology and manager responsibilities under HQ."
+        }
+      ],
+      "urlCount": 11
     }
   ]
 }

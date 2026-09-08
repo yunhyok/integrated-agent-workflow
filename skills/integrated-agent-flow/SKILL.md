@@ -1,15 +1,27 @@
 ---
 name: integrated-agent-flow
-description: Keep the current Codex session as the orchestration authority over native sub-agents and optional Codex, Claude, GitHub Copilot, Antigravity CLI, and local LM Studio advisers. Decompose and assign work, supervise execution, critically review results, resolve conflicts, and own final validation, with task-fit model selection, runtime-authoritative native routing, bounded diagnostics, and external model evidence. Use for complex implementation, large refactors, architecture review, broad code search, high-risk fixes, independent subtasks, PR review, CI triage, multi-agent comparison, model-routing failures, or whenever coordinated delegation would improve the result.
+description: Coordinate implementation and review with native sub-agents in one chat by default, or authorized parallel chats under a headquarters (HQ) coordinator, Astra/Sol workstream managers, and runtime-available task-fit workers. Keep scope, supervision, integration, and final validation with HQ; retain optional read-only external CLI and LM Studio advisers. Use for complex implementation, independent parallel workstreams, cross-module changes, architecture review, high-risk fixes, PR review, CI triage, or multi-agent coordination.
 ---
 
 # Integrated Agent Flow
 
 ## Operating Principle
 
+Resolve your role from the assignment first: HQ for the original user task, manager for an HQ-assigned workstream chat, or native worker for a sub-agent brief. Native workers execute only their bounded assignment and return evidence; they do not apply coordinator delegation duties or create further agents/chats. Preserve the assigned role across context compaction.
+
 Keep the current calling Codex session as the orchestration authority. Do not claim that a skill can inspect or switch the already-running coordinator model. When GPT-6 Astra is already selected, keep it in charge of demanding coordination; otherwise continue with the current model unless the user explicitly requires a different coordinator and the product offers a supported way to start that model. The coordinator must direct the workflow rather than act as a passive relay: understand the whole task, decompose it, assign bounded outcomes, supervise progress, challenge weak results, resolve conflicts, validate the integrated result, and present the final decision.
 
-Keep orchestration and final judgment with the current Codex coordinator. Keep external CLI and LM Studio agents advisory and read-only; they may return patch proposals but must not write to the active workspace. Grant bounded, disjoint write scopes only to native Codex sub-agents when the active tool policy permits it. Never accept an agent result solely because multiple agents agree; require source evidence, tests, logs, or reproducible reasoning.
+HQ owns the overall plan, shared contracts, cross-workstream decisions, integration, and final acceptance. A manager owns only its assigned workstream, supervises its native workers, reviews their changes, validates its checkout, and reports evidence to HQ. A manager's local completion is not overall completion. The coordinator duties below apply to HQ and managers within their respective scopes.
+
+Keep external CLI and LM Studio agents advisory and read-only; they may return patch proposals but must not write to the active workspace. Grant bounded, disjoint write scopes to native Codex workers and authorized manager chats when the active tool policy permits it. Never accept an agent result solely because multiple agents agree; require source evidence, tests, logs, or reproducible reasoning.
+
+## Execution Topology
+
+Default to one chat: the current coordinator delegates bounded implementation, search, or review to native sub-agents. Use this for tightly coupled work, small tasks, or assignments that would spend more time coordinating separate chats than doing useful parallel work.
+
+Use multiple chats when at least two substantial workstreams can progress independently, their interfaces and ownership can be stated up front, their results can be integrated and tested, and the user has explicitly authorized separate tasks/chats. Parallelizability alone or invoking this skill does not authorize creating sidebar tasks. Reuse authorization already given for this work; do not ask again for every workstream. If separate chats would help but are not authorized, propose that split briefly while continuing useful work with native sub-agents. If chat tools are unavailable, keep the work in the current chat.
+
+For multiple chats, read [references/multi-chat.md](references/multi-chat.md) before dispatch. Use the hierarchy `HQ (Astra when selected) -> manager chat (Astra/Sol when authorized and available) -> native workers (Terra/Luna/Spark by task fit)`. Managers do not recursively create more chats. Model roles are defaults, not an availability claim or permission to override a running model. The chat reference supplements, rather than replaces, the purpose-specific brief.
 
 ## Orchestration Duties
 
@@ -31,13 +43,15 @@ Use the available tool surfaces this way:
 - On a legacy router, use its discovered `ask_claude`, `ask_copilot`, or `ask_lm_studio` tool for one provider and `collect_reviews` for parallel advisory reviews. MCP namespaces vary by installation, so never construct a callable name from a hard-coded namespace.
 - Use direct external `codex`, `copilot`, or `antigravity` routes only when `doctor` or legacy `get_agent_status` reports the corresponding administrator-enabled policy opt-in; never try to enable one from a task prompt.
 - Use the available `spawn_agent` collaboration tool for decomposed Codex sub-agent work only when the current user request, tool instructions, and available tool schema permit sub-agent delegation. Do not hard-code a versioned tool namespace.
+- Supervise native workers using the active collaboration lifecycle tools (`list_agents`, `wait_agent`, `send_message`, `followup_task`, and `interrupt_agent` when available). Native agent IDs/canonical names and app task IDs are different handles; never pass one to the other's lifecycle tools.
 - Treat the active `spawn_agent` tool schema and its runtime response as the sole availability authority for native Codex child models. Do not preflight native children through a separate Codex CLI, the external-agent router, or a cached model catalog.
+- For authorized separate chats, discover the app's `list_projects`, `create_thread`, `list_threads`, `wait_threads`, `read_thread`, and `send_message_to_thread` tools. Their schemas govern chat creation, model selection, and lifecycle; a model listed there does not establish native `spawn_agent` availability. Do not substitute chat creation or an external CLI for a rejected native model.
 - If writable sub-agent delegation is not permitted, keep implementation in the main Codex thread and use external agents for read-only review.
 - If no multi-agent tools are available after discovery, continue locally and state that external delegation was unavailable.
 
 ## Model-Aware Agent Use
 
-Keep the current Codex model as coordinator. Select child-agent models independently by user instruction and task fit. A child is subordinate in responsibility, not necessarily in model capability: an Astra coordinator may delegate to Astra, Sol, Terra, or Luna when the active `spawn_agent` schema exposes the exact model. Do not impose a Luna/Terra-only restriction or automatically force every child onto the coordinator model.
+Keep the current Codex model as coordinator. Prefer Astra for HQ and Astra or Sol for workstream management when explicitly selected through supported product controls. Within either kind of chat, delegate routine execution to Terra, Luna, or exposed Spark workers; managers retain review and validation responsibility. Select native child-agent models independently by user instruction and task fit. A child is subordinate in responsibility, not necessarily in model capability: an Astra coordinator may delegate to Astra, Sol, Terra, or Luna when the active `spawn_agent` schema exposes the exact model. Do not impose a Luna/Terra-only restriction or automatically force every child onto the coordinator model.
 
 When the user has not selected a child model, use these task-fit defaults among the models advertised by the active schema:
 
@@ -72,7 +86,7 @@ Context-file transfer is disabled until the machine installer records one or mor
 
 ## Delegation Decision
 
-When this skill is invoked for a nontrivial task, start grounded coordinator work immediately and delegate at least one meaningful subtask or independent review instead of merely considering delegation. Tool discovery and model availability checks must not become a prerequisite for repository inspection or coordinator progress. Increase coverage when at least one condition applies:
+When this skill is invoked by HQ or a manager for a nontrivial task, start grounded coordinator work immediately and delegate at least one meaningful subtask or independent review instead of merely considering delegation. Native workers return their bounded result without redelegating. Tool discovery and model availability checks must not become a prerequisite for repository inspection or coordinator progress. Increase coverage when at least one condition applies:
 
 - The work spans multiple modules, platforms, or ownership areas.
 - The code search space is broad and independent questions can be answered in parallel.
@@ -98,7 +112,7 @@ Keep these variants as references rather than separate automatically triggered s
 
 1. Keep the current calling Codex session as coordinator. Record its model only when the active product explicitly reports it; never infer or claim a coordinator-model switch from this skill.
 2. Resolve the real target checkout before provider or model preparation. Verify its repository state, remote, relevant entry points, tests, and user-named deliverables enough to maintain the complete task model and write concrete prompts.
-3. Begin useful coordinator work. Classify each assignment as implementation, review, or general; load exactly one corresponding purpose reference for implementation or review and neither reference for general work; then split work by bounded outcome. Include the exact question, relevant paths, non-goals, constraints, shared system-level acceptance criteria, subtask-specific criteria, evidence standard, read-only or patch-proposal policy, and expected output in every assignment.
+3. Begin useful coordinator work and choose the execution topology above. Classify each assignment as implementation, review, or general; load exactly one corresponding purpose reference for implementation or review and neither reference for general work; then split work by bounded outcome. Include the exact question, relevant paths, non-goals, constraints, shared system-level acceptance criteria, subtask-specific criteria, evidence standard, write scope or read-only policy, and expected output in every assignment. For authorized manager chats, also follow the multi-chat reference and retain HQ ownership of integration.
 4. For native Codex sub-agents, use the active `spawn_agent` schema directly, pass the selected model and resolved reasoning effort explicitly with a non-full-history fork, and attempt the selection once. Put `Target checkout: <absolute path>` in every self-contained brief, require all work to occur there, and explicitly forbid edits in an initial wrapper directory when it differs. Keep ownership clear; for writable children, assign disjoint files or modules and state that other agents may be editing the codebase.
 5. Only when an external CLI or LM Studio assignment is ready to dispatch, run `doctor` (or the legacy status fallback) and any provider-specific model listing. Keep external agents advisory and non-writing, respect startup policy gates and allowed context roots, and ask for analysis, risks, alternatives, missed edge cases, or patch proposals rather than direct file edits.
 6. Apply the native diagnostic circuit breaker: one selected-model attempt, at most one fallback for a coordinator-selected model, no environment forensics during project work, and no interruption to unrelated coordinator progress.
@@ -122,6 +136,7 @@ Constraints: Do not edit files. Ground findings in file paths, line references, 
 Use this shape for writable Codex sub-agents when permitted:
 
 ```text
+You are a native worker, not HQ or a manager. Do not create agents or chats; return your bounded result to the assigning coordinator.
 You are not alone in the codebase. Do not revert edits made by others.
 Target checkout: <absolute path>. Run every command, edit, and test there; do not work in an initial wrapper directory.
 Own this scope only: <files/modules>.
@@ -134,7 +149,7 @@ Return: changed files, validation run, remaining risks.
 
 In the final answer, include only the useful coordination details:
 
-- Agent coverage: which agents or sub-agents were used and for what.
+- Agent coverage: which agents or sub-agents were used and for what; for multiple chats, identify HQ, manager task IDs/titles, workstreams, and accepted results without claiming a requested model was observed.
 - Evidence boundary: distinguish external-agent claims, coordinator-verified facts, and unresolved conflicts.
 - Accepted findings: recommendations incorporated into the final result.
 - Rejected findings: recommendations not used, with the reason.

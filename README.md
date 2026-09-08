@@ -1,7 +1,8 @@
-# Integrated Agent Workflow v0.6.5
+# Integrated Agent Workflow v0.7.0
 
 A Windows-first Codex skill and hardened local MCP router for coordinated,
-model-aware implementation and review. Codex native sub-agents handle ordinary
+model-aware implementation and review, in one chat by default or in authorized
+parallel manager chats under the current HQ. Codex native sub-agents handle ordinary
 bounded work; the optional Python MCP router adds advisory opinions from Claude
 Code, GitHub Copilot CLI, Antigravity CLI, LM Studio, and an explicitly opted-in
 Codex CLI reviewer.
@@ -15,7 +16,7 @@ confined independently of local user configuration.
 ## Architecture
 
 The repository intentionally exposes one auto-trigger skill,
-`integrated-agent-flow`, with purpose-specific implementation and review
+`integrated-agent-flow`, with implementation, review, and multi-chat
 references loaded only when needed. This keeps orchestration, safety, model
 reporting, and acceptance-criteria rules in one source of truth without losing
 the useful detail of the former three-skill layout.
@@ -263,7 +264,7 @@ References:
 ## Integrated Agent Flow skill
 
 The distributable skill is under `skills/integrated-agent-flow`. Plugin-managed
-installs should activate the complete v0.6.5 plugin rather than copy the skill
+installs should activate the complete v0.7.0 plugin rather than copy the skill
 separately. For a manual local skill install, archive the previous copy and the
 three v0.5 skill folders outside the active skills directory, then install a
 clean copy:
@@ -303,7 +304,48 @@ Copy-Item -LiteralPath '.\skills\integrated-agent-flow' `
 
 The archive is recoverable under `~/.codex/skill-backups`. Do not leave the old
 three folders under `~/.codex/skills`: their overlapping auto-trigger metadata
-can activate alongside v0.6.5. Fully restart Codex after changing active skills.
+can activate alongside v0.7.0. Fully restart Codex after changing active skills.
+
+### HQ and parallel manager chats
+
+The default stays one chat with native sub-agents. When at least two substantial
+workstreams have independent scopes, clear interfaces and integration checks,
+HQ can split them into separate chats if the user explicitly authorized separate
+tasks. Invoking the skill or asking for parallel work alone does not create that
+authorization. Existing authorization is reused without asking per workstream.
+
+| Level | Model preference | Responsibility |
+| --- | --- | --- |
+| HQ, the current chat | Astra when already selected | Overall plan, shared contracts, integration and final acceptance |
+| Separate manager chat | Astra or Sol when explicitly selected and available | Own one workstream, supervise native workers, review and validate its result |
+| Native worker inside a chat | Terra, Luna or exposed Spark by task fit | Bounded coding, search, checks or review |
+
+For example: "Use $integrated-agent-flow. Keep this Astra chat as HQ, create
+separate Sol manager chats for the independent workstreams, and let them assign
+Terra/Luna workers and Spark only if their native tool exposes it."
+
+Manager chats use isolated Git worktrees by default. HQ tracks dependencies,
+actual bases, task IDs, result commits and test evidence, then reviews and
+integrates accepted candidates in dependency order and tests the combined result.
+Managers do not recursively create chats or publish results unless that action
+has been explicitly assigned within the user's authorization. Begin with the
+smallest useful fan-out, normally two managers, and respect shared account limits.
+
+The app's task-creation schema and native `spawn_agent` schema are independent:
+Spark appearing in the app model picker does not make it a native worker model.
+The skill does not switch the running HQ. A new chat's `model` is omitted unless
+the user explicitly selected one; an unspecified manager uses the app default,
+and the skill must not claim that it ran Astra/Sol without product evidence.
+Without authorization or available chat tools, useful native delegation continues
+in the current chat. A queued client task ID must resolve to a ready task ID before
+monitoring or messaging; uncertain creation is reconciled before any retry.
+
+See the [multi-chat operating contract](skills/integrated-agent-flow/references/multi-chat.md)
+for manager briefs, supervision, recovery and integration. This hierarchy uses
+existing app tools; it adds no router service or background scheduler. The
+[official worktree documentation](https://learn.chatgpt.com/docs/environments/git-worktrees)
+describes checkout isolation, while the active app schemas remain authoritative
+for task creation and lifecycle.
 
 ### Native child model routing
 
@@ -363,7 +405,7 @@ It is not an installation prerequisite and the skill never runs or recommends it
 during ordinary project execution. The script requires Codex CLI 0.147.0 or
 newer, preserves the source cache, creates backups, writes a separate opt-in
 catalog, validates strict configuration, and requires a full restart afterward.
-Existing personal overrides are not changed by a v0.6.5 plugin upgrade.
+Existing personal overrides are not changed by a v0.7.0 plugin upgrade.
 
 ## Review context and privacy
 
@@ -501,9 +543,9 @@ creating or changing a global MCP registration.
 
 If the skill was copied manually, rerun the clean-copy migration in
 **Integrated Agent Flow skill**. If Codex loads the repository
-as a plugin, activate the complete v0.6.5 bundle and verify that
+as a plugin, activate the complete v0.7.0 bundle and verify that
 `integrated-agent-flow` is the only skill exposed by this plugin; do not overlay
-the v0.6.5 files onto an active v0.5.0 cache directory.
+the v0.7.0 files onto an active v0.5.0 cache directory.
 
 ## Uninstall
 
