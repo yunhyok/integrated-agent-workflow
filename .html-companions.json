@@ -5,7 +5,7 @@
     "name": "Markdown HTML Companion",
     "version": "0.1.0"
   },
-  "generatedAt": "2026-09-08T12:17:12.613744+00:00",
+  "generatedAt": "2026-09-08T12:19:10.925160+00:00",
   "repository": "yunhyok/integrated-agent-workflow",
   "baseBranch": "master",
   "baseSha": "bbb4c448594bf0c691de34bb2f84d743f260b1bd",
@@ -34,10 +34,10 @@
     },
     {
       "source": "skills/integrated-agent-flow/SKILL.md",
-      "sourceBlobSha": "b4205ef3ea86562acb46661c19ba6d6c3af88838",
-      "sourceSha256": "115015a3099c68f79cab429ee745ae0c63342ae45735c1d71cdbd4af4728339c",
+      "sourceBlobSha": "ab22c8cf1a2827752a42ed7a508fcd6fbe42efe5",
+      "sourceSha256": "298f56ed330c05fe1ee2bec3f2552da088b2f3e2fdddf2ea9de4212037bdb36b",
       "output": "skills/integrated-agent-flow/SKILL.companion.html",
-      "outputSha256": "ec619c3a67261e9cd29a4da0ae9d3dc6e4b74007258962c2c77b3c0865e7779d",
+      "outputSha256": "f7854071fae100edcb3cb0d572a1c45bd085dcc99489f045d455db00051f60de",
       "headingCount": 11,
       "visualClassification": "PROCESS_FLOW",
       "visualTitle": "Review and implementation orchestration loop",
