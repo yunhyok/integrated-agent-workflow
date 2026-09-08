@@ -5,7 +5,7 @@
     "name": "Markdown HTML Companion",
     "version": "0.1.0"
   },
-  "generatedAt": "2026-09-08T12:13:22.526471+00:00",
+  "generatedAt": "2026-09-08T12:17:12.613744+00:00",
   "repository": "yunhyok/integrated-agent-workflow",
   "baseBranch": "master",
   "baseSha": "bbb4c448594bf0c691de34bb2f84d743f260b1bd",
@@ -105,9 +105,9 @@
       "visualClassification": "ARCHITECTURE",
       "visualTitle": "HQ, manager chats and native workers",
       "diagramAdded": true,
-      "sourceBlobSha": "97392b9c1a998d36545ff41017c3f5cb35c6c17e",
-      "sourceSha256": "540a05a393686dff3b0993ef4c6a710bc44e0c01e86a4331841cbae9efbcc8a8",
-      "outputSha256": "31c8d1ef61ee5a95b58b9ebb966f7068bc7f6c950ba0bda83b2a9f8a5f97fcd3",
+      "sourceBlobSha": "b20e632369806d5c9c081dd47edb5870ae092b8c",
+      "sourceSha256": "71430f4834d4aa9e478a9265daa5c26bb64f0301aec03c4bb5d56f4d8a8b8b2a",
+      "outputSha256": "f4aadf00b5edf67579fa56206b5d4de23ed7473d8dffaad043e4a092289da778",
       "headingCount": 7,
       "evidence": [
         {
