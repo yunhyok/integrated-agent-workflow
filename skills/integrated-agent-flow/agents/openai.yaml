@@ -1,4 +1,4 @@
 interface:
   display_name: "Integrated Agent Flow"
-  short_description: "Orchestrate secure multi-agent implementation and review"
-  default_prompt: "Use $integrated-agent-flow to coordinate a secure implementation or review, verify agent evidence, and validate the final result."
+  short_description: "Coordinate agents in one chat or authorized parallel chats"
+  default_prompt: "Use $integrated-agent-flow to coordinate implementation or review in this chat, use separate manager chats when explicitly authorized and useful, and own the final integrated validation."
