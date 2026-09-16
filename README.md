@@ -1,4 +1,4 @@
-# Integrated Agent Workflow v0.7.0
+# Integrated Agent Workflow v0.8.0
 
 A Windows-first Codex skill and hardened local MCP router for coordinated,
 model-aware implementation and review, in one chat by default or in authorized
@@ -264,7 +264,7 @@ References:
 ## Integrated Agent Flow skill
 
 The distributable skill is under `skills/integrated-agent-flow`. Plugin-managed
-installs should activate the complete v0.7.0 plugin rather than copy the skill
+installs should activate the complete v0.8.0 plugin rather than copy the skill
 separately. For a manual local skill install, archive the previous copy and the
 three v0.5 skill folders outside the active skills directory, then install a
 clean copy:
@@ -304,7 +304,7 @@ Copy-Item -LiteralPath '.\skills\integrated-agent-flow' `
 
 The archive is recoverable under `~/.codex/skill-backups`. Do not leave the old
 three folders under `~/.codex/skills`: their overlapping auto-trigger metadata
-can activate alongside v0.7.0. Fully restart Codex after changing active skills.
+can activate alongside v0.8.0. Fully restart Codex after changing active skills.
 
 ### HQ and parallel manager chats
 
@@ -313,6 +313,9 @@ workstreams have independent scopes, clear interfaces and integration checks,
 HQ can split them into separate chats if the user explicitly authorized separate
 tasks. Invoking the skill or asking for parallel work alone does not create that
 authorization. Existing authorization is reused without asking per workstream.
+An explicit request to "create child chats when parallel work is useful" lets
+HQ choose that split within the current task after weighing transfer and
+integration overhead.
 
 | Level | Model preference | Responsibility |
 | --- | --- | --- |
@@ -324,7 +327,7 @@ For example: "Use $integrated-agent-flow. Keep this Astra chat as HQ, create
 separate Sol manager chats for the independent workstreams, and let them assign
 Terra/Luna workers and Spark only if their native tool exposes it."
 
-Manager chats use isolated Git worktrees by default. HQ tracks dependencies,
+Concurrent manager chats that write code use isolated Git worktrees by default. HQ tracks dependencies,
 actual bases, task IDs, result commits and test evidence, then reviews and
 integrates accepted candidates in dependency order and tests the combined result.
 Managers do not recursively create chats or publish results unless that action
@@ -347,18 +350,34 @@ existing app tools; it adds no router service or background scheduler. The
 describes checkout isolation, while the active app schemas remain authoritative
 for task creation and lifecycle.
 
+For inherited context, prefer the app's `fork_thread` when the parent's completed
+history is relevant. A fork does not include the active turn: HQ sends the current
+request, decisions, role and bounded assignment in a complete follow-up brief
+after a ready task ID exists. Use a fresh `create_thread` with the same explicit
+handoff when a different project/host or a fresh context is more appropriate.
+Neither route creates an app-enforced parent/child permission hierarchy.
+
+Every child receives a revisioned handoff naming required skills/instruction
+files, accepted contracts, data/artifact locations, ownership, and relevant
+revisions or hashes. It reads required skills and confirms input access in its
+own environment before dependent edits. Forked history does not install skills,
+transfer credentials, guarantee file copies, or keep later changes synchronized.
+HQ explicitly supplies updates, tracks each child, and accepts only reviewed
+results. See [OpenAI's skill documentation](https://learn.chatgpt.com/docs/build-skills)
+for how skill files are discovered and loaded.
+
 ### Native child model routing
 
 An active GPT-6 Astra coordinator can delegate to Astra, Sol, Terra, and Luna;
 child responsibility does not require a less capable model. The skill keeps the
 current coordinator in charge and selects each child independently:
 
-| Native child model | Default task fit |
-| --- | --- |
-| `gpt-6-astra` | Hardest bounded reasoning, architecture, debugging, or independent high-risk review |
-| `gpt-5.6-sol` | Complex implementation or review across multiple files |
-| `gpt-5.6-terra` | Routine implementation, fixes, or review with balanced capability and cost |
-| `gpt-5.6-luna` | Well-specified edits, focused searches, or narrow checks |
+| Native child model | Default reasoning effort | Default task fit |
+| --- | --- | --- |
+| `gpt-6-astra` | `xhigh` (Extra High) | Hardest bounded reasoning, architecture, debugging, or independent high-risk review |
+| `gpt-5.6-sol` | `high` | Complex implementation or review across multiple files |
+| `gpt-5.6-terra` | Runtime default | Routine implementation, fixes, or review with balanced capability and cost |
+| `gpt-5.6-luna` | `high` | Well-specified edits, focused searches, or narrow checks |
 
 These defaults apply only when the active tool advertises the model and the
 user has not chosen one. Choose the smallest model that can reliably satisfy
@@ -375,10 +394,15 @@ user-selected model blocks only the work that truly depends on that child; a
 coordinator-selected model may receive one fallback attempt. Repository
 grounding and unrelated coordinator work continue either way.
 
-Unless the user selects a reasoning effort, the skill explicitly passes the
-highest level advertised for the chosen native model: `ultra`, then `max`,
-`xhigh`, `high`, `medium`, or `low`. It never applies an unsupported global
-effort to a different model. A supported explicit user choice still wins.
+Unless the user selects a reasoning effort, the skill uses Astra `xhigh`
+(Extra High), Sol `high`, and Luna `high`, validated against the active schema.
+Other models use their advertised runtime default; effort is not automatically
+maximized. A supported explicit user choice still wins. If a table default is
+unavailable, report it and use an advertised compatible default, or keep the
+assignment pending if none is known. Manager chats use the same table through
+`thinking` when their selected model is known and the tool permits it; an unknown
+app default is left unchanged and reported as unverified. Model selection still
+requires the explicit user choice described above. The running HQ is unchanged.
 Model or effort overrides use a self-contained non-full-history fork because a
 full-history fork intentionally inherits the parent model and effort.
 
@@ -405,7 +429,7 @@ It is not an installation prerequisite and the skill never runs or recommends it
 during ordinary project execution. The script requires Codex CLI 0.147.0 or
 newer, preserves the source cache, creates backups, writes a separate opt-in
 catalog, validates strict configuration, and requires a full restart afterward.
-Existing personal overrides are not changed by a v0.7.0 plugin upgrade.
+Existing personal overrides are not changed by a v0.8.0 plugin upgrade.
 
 ## Review context and privacy
 
@@ -543,9 +567,9 @@ creating or changing a global MCP registration.
 
 If the skill was copied manually, rerun the clean-copy migration in
 **Integrated Agent Flow skill**. If Codex loads the repository
-as a plugin, activate the complete v0.7.0 bundle and verify that
+as a plugin, activate the complete v0.8.0 bundle and verify that
 `integrated-agent-flow` is the only skill exposed by this plugin; do not overlay
-the v0.7.0 files onto an active v0.5.0 cache directory.
+the v0.8.0 files onto an active v0.5.0 cache directory.
 
 ## Uninstall
 

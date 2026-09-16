@@ -1,7 +1,7 @@
 {
   "name": "integrated-agent-workflow",
-  "version": "0.7.0",
-  "description": "Coordinate native agents in one chat or authorized parallel manager chats under HQ, with optional read-only CLI advisers.",
+  "version": "0.8.0",
+  "description": "Coordinate native agents and authorized child chats with inherited task context under HQ, plus optional read-only CLI advisers.",
   "author": {
     "name": "Yunhyok",
     "url": "https://github.com/yunhyok"
@@ -10,16 +10,16 @@
   "repository": "https://github.com/yunhyok/integrated-agent-workflow",
   "keywords": ["codex", "multi-agent", "lm-studio", "mcp", "review"],
   "interface": {
-    "displayName": "Integrated Agent Workflow v0.7.0",
+    "displayName": "Integrated Agent Workflow v0.8.0",
     "shortDescription": "Coordinate agents and manager chats under HQ.",
-    "longDescription": "Use native sub-agents in one chat by default. With explicit task-creation authorization, split independent work into Astra/Sol manager chats supervising task-fit Terra/Luna/Spark workers while the current HQ owns integration and final validation. Optional external CLI and LM Studio advisers remain read-only, and model availability follows each active tool schema.",
+    "longDescription": "Use native sub-agents in one chat by default. With explicit task-creation authorization, split independent work into Astra/Sol manager chats supervising task-fit Terra/Luna/Spark workers with explicit skill/data handoffs while HQ owns integration and final validation. Prefer completed-history forks where useful; Astra defaults to xhigh and Sol/Luna to high when the active tool permits. Optional external CLI and LM Studio advisers remain read-only, and model availability follows each active tool schema.",
     "developerName": "Yunhyok",
     "category": "Productivity",
     "capabilities": ["Interactive", "Read"],
     "defaultPrompt": [
       "Run a multi-agent review of this change.",
       "Coordinate Astra, Sol, Terra, and Luna sub-agents by task fit.",
-      "Keep this Astra chat as HQ and create Sol manager chats for independent workstreams, using task-fit native workers.",
+      "Keep this Astra chat as HQ and create Sol child chats when independent work benefits, passing the current task, required skills and data to each manager.",
       "Use gpt-5.3-codex-spark for a focused fast subtask.",
       "Check which configured reviewer models are available."
     ]
