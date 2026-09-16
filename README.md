@@ -327,7 +327,7 @@ For example: "Use $integrated-agent-flow. Keep this Astra chat as HQ, create
 separate Sol manager chats for the independent workstreams, and let them assign
 Terra/Luna workers and Spark only if their native tool exposes it."
 
-Manager chats use isolated Git worktrees by default. HQ tracks dependencies,
+Concurrent manager chats that write code use isolated Git worktrees by default. HQ tracks dependencies,
 actual bases, task IDs, result commits and test evidence, then reviews and
 integrates accepted candidates in dependency order and tests the combined result.
 Managers do not recursively create chats or publish results unless that action
